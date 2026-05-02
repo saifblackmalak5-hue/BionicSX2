@@ -1,0 +1,3 @@
+[submodule "src/armsx2"]
+	path = src/armsx2
+	url = https://github.com/saifblackmalak5-hue/ARMSX2.git
