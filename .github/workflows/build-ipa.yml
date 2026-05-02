@@ -24,7 +24,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Install Dependencies
-        run: brew install cmake ninja ccache curl zlib freetype zstd jpeg-turbo sdl3
+        run: brew install cmake ninja ccache curl freetype zstd jpeg-turbo sdl3 libpng
 
       - name: Setup MoltenVK
         run: |
@@ -50,14 +50,16 @@ jobs:
           sed -i '' 's/find_package(PCAP/# find_package(PCAP/g' $FILE
           echo "Patch 3 done"
 
-      - name: Patch 4 - Inject Dependencies
+      - name: Patch 4 - Inject All Dependencies
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
           FT=$(brew --prefix freetype)
           JPEG=$(brew --prefix jpeg-turbo)
           ZSTD=$(brew --prefix zstd)
           SDL3=$(brew --prefix sdl3)
-          printf "set(FREETYPE_LIBRARY ${FT}/lib/libfreetype.dylib)\nset(FREETYPE_INCLUDE_DIRS ${FT}/include/freetype2)\nfind_package(Freetype REQUIRED)\nset(JPEG_LIBRARY ${JPEG}/lib/libjpeg.dylib)\nset(JPEG_INCLUDE_DIR ${JPEG}/include)\nfind_package(JPEG REQUIRED)\nset(zstd_DIR ${ZSTD}/lib/cmake/zstd)\nfind_package(zstd REQUIRED)\nset(SDL3_DIR ${SDL3}/lib/cmake/SDL3)\nfind_package(SDL3 REQUIRED)\n" > /tmp/inject.txt
+          PNG=$(brew --prefix libpng)
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          printf "find_package(ZLIB REQUIRED)\nif(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n  add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n  set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\nendif()\nset(FREETYPE_LIBRARY ${FT}/lib/libfreetype.dylib)\nset(FREETYPE_INCLUDE_DIRS ${FT}/include/freetype2)\nfind_package(Freetype REQUIRED)\nset(JPEG_LIBRARY ${JPEG}/lib/libjpeg.dylib)\nset(JPEG_INCLUDE_DIR ${JPEG}/include)\nfind_package(JPEG REQUIRED)\nset(Zstd_LIBRARY ${ZSTD}/lib/libzstd.dylib)\nset(Zstd_INCLUDE_DIR ${ZSTD}/include)\nadd_library(Zstd::Zstd UNKNOWN IMPORTED)\nset_target_properties(Zstd::Zstd PROPERTIES IMPORTED_LOCATION ${ZSTD}/lib/libzstd.dylib INTERFACE_INCLUDE_DIRECTORIES ${ZSTD}/include)\nset(PNG_LIBRARY ${PNG}/lib/libpng.dylib)\nset(PNG_PNG_INCLUDE_DIR ${PNG}/include)\nfind_package(PNG REQUIRED)\nset(SDL3_DIR ${SDL3}/lib/cmake/SDL3)\nfind_package(SDL3 REQUIRED)\n" > /tmp/inject.txt
           cat /tmp/inject.txt $FILE > /tmp/merged.txt
           mv /tmp/merged.txt $FILE
           echo "Patch 4 done"
