@@ -63,15 +63,32 @@ jobs:
             $FILE
           echo "Patch 3 ✅"
 
+      - name: 🩹 Patch 4 - Inject find_package for missing libs
+        run: |
+          MAIN="src/armsx2/app/src/main/cpp/CMakeLists.txt"
+          SEARCH="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
+
+          # نحقن find_package في بداية SearchForStuff.cmake
+          cat > /tmp/inject.cmake << 'INJECT'
+# BionicSX2 iOS - Injected dependencies
+find_package(ZLIB REQUIRED)
+find_package(Freetype REQUIRED)
+find_package(JPEG REQUIRED)
+find_package(zstd REQUIRED)
+find_package(SDL3 REQUIRED)
+INJECT
+
+          # نضيف في أول السطر
+          cat /tmp/inject.cmake $SEARCH > /tmp/SearchForStuff_new.cmake
+          mv /tmp/SearchForStuff_new.cmake $SEARCH
+
+          echo "=== First 10 lines after patch ==="
+          head -10 $SEARCH
+          echo "Patch 4 ✅"
+
       - name: ⚙️ Configure CMake for iOS
         run: |
           CURL_PATH=$(brew --prefix curl)
-          ZLIB_PATH=$(brew --prefix zlib)
-          FT_PATH=$(brew --prefix freetype)
-          ZSTD_PATH=$(brew --prefix zstd)
-          JPEG_PATH=$(brew --prefix jpeg-turbo)
-          SDL3_PATH=$(brew --prefix sdl3)
-
           cmake -B build \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS \
@@ -81,15 +98,6 @@ jobs:
             -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
             -DCURL_LIBRARY=$CURL_PATH/lib/libcurl.dylib \
             -DCURL_INCLUDE_DIR=$CURL_PATH/include \
-            -DZLIB_LIBRARY=$ZLIB_PATH/lib/libz.dylib \
-            -DZLIB_INCLUDE_DIR=$ZLIB_PATH/include \
-            -DFREETYPE_LIBRARY=$FT_PATH/lib/libfreetype.dylib \
-            -DFREETYPE_INCLUDE_DIRS=$FT_PATH/include/freetype2 \
-            -DZstd_LIBRARY=$ZSTD_PATH/lib/libzstd.dylib \
-            -DZstd_INCLUDE_DIR=$ZSTD_PATH/include \
-            -DJPEG_LIBRARY=$JPEG_PATH/lib/libjpeg.dylib \
-            -DJPEG_INCLUDE_DIR=$JPEG_PATH/include \
-            -DSDL3_DIR=$SDL3_PATH/lib/cmake/SDL3 \
             -S src/armsx2/app/src/main/cpp
 
       - name: 🔨 Build
