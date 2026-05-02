@@ -25,7 +25,8 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          brew install cmake ninja ccache curl
+          brew install cmake ninja ccache curl \
+            zlib freetype zstd jpeg-turbo sdl3
           echo "Dependencies installed ✅"
 
       - name: 🌋 Setup MoltenVK
@@ -57,19 +58,20 @@ jobs:
       - name: 🩹 Patch 3 - Disable PCAP for iOS
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-          echo "=== Before ==="
-          grep -n "PCAP\|pcap" $FILE | head -10
-          # نعوّض find_package(PCAP) بـ skip
           sed -i '' \
             's/find_package(PCAP/# iOS: PCAP disabled\n  # find_package(PCAP/g' \
             $FILE
-          echo "=== After ==="
-          grep -n "PCAP\|pcap" $FILE | head -10
           echo "Patch 3 ✅"
 
       - name: ⚙️ Configure CMake for iOS
         run: |
           CURL_PATH=$(brew --prefix curl)
+          ZLIB_PATH=$(brew --prefix zlib)
+          FT_PATH=$(brew --prefix freetype)
+          ZSTD_PATH=$(brew --prefix zstd)
+          JPEG_PATH=$(brew --prefix jpeg-turbo)
+          SDL3_PATH=$(brew --prefix sdl3)
+
           cmake -B build \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS \
@@ -77,11 +79,17 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
-            -DVULKAN_LIBRARY=${{ env.MOLTENVK_PATH }}/lib/libMoltenVK.dylib \
-            -DVULKAN_INCLUDE_DIR=${{ env.MOLTENVK_PATH }}/include \
             -DCURL_LIBRARY=$CURL_PATH/lib/libcurl.dylib \
             -DCURL_INCLUDE_DIR=$CURL_PATH/include \
-            -DPCAP_FOUND=FALSE \
+            -DZLIB_LIBRARY=$ZLIB_PATH/lib/libz.dylib \
+            -DZLIB_INCLUDE_DIR=$ZLIB_PATH/include \
+            -DFREETYPE_LIBRARY=$FT_PATH/lib/libfreetype.dylib \
+            -DFREETYPE_INCLUDE_DIRS=$FT_PATH/include/freetype2 \
+            -DZstd_LIBRARY=$ZSTD_PATH/lib/libzstd.dylib \
+            -DZstd_INCLUDE_DIR=$ZSTD_PATH/include \
+            -DJPEG_LIBRARY=$JPEG_PATH/lib/libjpeg.dylib \
+            -DJPEG_INCLUDE_DIR=$JPEG_PATH/include \
+            -DSDL3_DIR=$SDL3_PATH/lib/cmake/SDL3 \
             -S src/armsx2/app/src/main/cpp
 
       - name: 🔨 Build
