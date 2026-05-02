@@ -26,26 +26,45 @@ jobs:
       - name: 📦 Install Dependencies
         run: |
           brew install cmake ninja ccache
+          echo "Dependencies installed ✅"
 
       - name: 🌋 Setup MoltenVK
         run: |
           brew install molten-vk
-          echo "MoltenVK installed ✅"
+          MOLTENVK_PATH=$(brew --prefix molten-vk)
+          echo "MOLTENVK_PATH=$MOLTENVK_PATH" >> $GITHUB_ENV
+          echo "MoltenVK installed at $MOLTENVK_PATH ✅"
 
-      - name: 🔍 Inspect Full Source Structure
+      - name: ⚙️ Configure CMake for iOS
         run: |
-          echo "====== ROOT ======"
-          ls -la src/armsx2/
+          cmake -B build \
+            -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
+            -DVULKAN_LIBRARY=${{ env.MOLTENVK_PATH }}/lib/libMoltenVK.dylib \
+            -DVULKAN_INCLUDE_DIR=${{ env.MOLTENVK_PATH }}/include \
+            -S src/armsx2/app/src/main/cpp
 
-          echo "====== CMakeLists Hunt ======"
-          find src/armsx2 -name "CMakeLists.txt" 2>/dev/null
+      - name: 🔨 Build
+        run: |
+          cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
-          echo "====== cpp folder ======"
-          find src/armsx2 -name "*.cpp" | head -10
+      - name: 📦 Package IPA
+        run: |
+          mkdir -p output/Payload/BionicSX2.app
+          # Copy binary
+          cp build/BionicSX2 output/Payload/BionicSX2.app/ 2>/dev/null || \
+          find build -name "*.so" -o -name "armsx2" | head -5
+          cd output
+          zip -r BionicSX2.ipa Payload/
+          echo "IPA created ✅"
 
-          echo "====== Android JNI ======"
-          find src/armsx2 -name "Android.mk" -o -name "CMakeLists.txt" | head -20
-
-          echo "====== app/src/main/cpp ======"
-          ls src/armsx2/app/src/main/cpp/ 2>/dev/null || echo "Not found"
-
+      - name: 🚀 Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BionicSX2-IPA
+          path: output/BionicSX2.ipa
+          retention-days: 7
