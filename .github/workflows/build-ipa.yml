@@ -1,4 +1,4 @@
-name: 🎮 BionicSX2 - Build IPA
+name: BionicSX2 - Build IPA
 
 on:
   push:
@@ -13,82 +13,53 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: 🔧 Setup Xcode
+      - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - name: 📦 Install Dependencies
-        run: |
-          brew install cmake ninja ccache curl \
-            zlib freetype zstd jpeg-turbo sdl3
-          echo "Dependencies installed ✅"
+      - name: Install Dependencies
+        run: brew install cmake ninja ccache curl zlib freetype zstd jpeg-turbo sdl3
 
-      - name: 🌋 Setup MoltenVK
+      - name: Setup MoltenVK
         run: |
           brew install molten-vk
-          MOLTENVK_PATH=$(brew --prefix molten-vk)
-          echo "MOLTENVK_PATH=$MOLTENVK_PATH" >> $GITHUB_ENV
-          echo "MoltenVK installed ✅"
+          echo "MOLTENVK_PATH=$(brew --prefix molten-vk)" >> $GITHUB_ENV
 
-      - name: 🩹 Patch 1 - iOS Platform Support
+      - name: Patch 1 - iOS Platform
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/Pcsx2Utils.cmake"
-          sed -i '' \
-            's/message(FATAL_ERROR "Unsupported platform.")/message(STATUS "iOS platform - BionicSX2")\n    set(PCSX2_TARGET_TRIPLET "aarch64-apple-ios")\n    set(IOS TRUE)/g' \
-            $FILE
-          echo "Patch 1 ✅"
+          sed -i '' 's/message(FATAL_ERROR "Unsupported platform.")/message(STATUS "iOS - BionicSX2")\n    set(IOS TRUE)/g' $FILE
+          echo "Patch 1 done"
 
-      - name: 🩹 Patch 2 - Add arm64 to TargetArch.cmake
+      - name: Patch 2 - ARM64 Architecture
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/TargetArch.cmake"
-          sed -i '' \
-            's/elseif("${osx_arch}" STREQUAL "ppc64" AND ppc_support)/elseif("${osx_arch}" STREQUAL "arm64")\n\t\t\t\tset(osx_arch_arm64 TRUE)\n\t\t\telseif("${osx_arch}" STREQUAL "ppc64" AND ppc_support)/g' \
-            $FILE
-          sed -i '' \
-            's/if(osx_arch_ppc64)/if(osx_arch_arm64)\n\t\tlist(APPEND ARCH aarch64)\n\t\tendif()\n\n\t\tif(osx_arch_ppc64)/g' \
-            $FILE
-          echo "Patch 2 ✅"
+          sed -i '' 's/elseif("${osx_arch}" STREQUAL "ppc64" AND ppc_support)/elseif("${osx_arch}" STREQUAL "arm64")\n\t\t\t\tset(osx_arch_arm64 TRUE)\n\t\t\telseif("${osx_arch}" STREQUAL "ppc64" AND ppc_support)/g' $FILE
+          sed -i '' 's/if(osx_arch_ppc64)/if(osx_arch_arm64)\n\t\tlist(APPEND ARCH aarch64)\n\t\tendif()\n\n\t\tif(osx_arch_ppc64)/g' $FILE
+          echo "Patch 2 done"
 
-      - name: 🩹 Patch 3 - Disable PCAP for iOS
+      - name: Patch 3 - Disable PCAP
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-          sed -i '' \
-            's/find_package(PCAP/# iOS: PCAP disabled\n  # find_package(PCAP/g' \
-            $FILE
-          echo "Patch 3 ✅"
+          sed -i '' 's/find_package(PCAP/# find_package(PCAP/g' $FILE
+          echo "Patch 3 done"
 
-      - name: 🩹 Patch 4 - Inject find_package for missing libs
+      - name: Patch 4 - Inject Dependencies
         run: |
-          MAIN="src/armsx2/app/src/main/cpp/CMakeLists.txt"
-          SEARCH="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
+          FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
+          printf 'find_package(ZLIB REQUIRED)\nfind_package(Freetype REQUIRED)\nfind_package(JPEG REQUIRED)\nfind_package(zstd REQUIRED)\nfind_package(SDL3 REQUIRED)\n' > /tmp/inject.txt
+          cat /tmp/inject.txt $FILE > /tmp/merged.txt
+          mv /tmp/merged.txt $FILE
+          echo "Patch 4 done"
 
-          # نحقن find_package في بداية SearchForStuff.cmake
-          cat > /tmp/inject.cmake << 'INJECT'
-# BionicSX2 iOS - Injected dependencies
-find_package(ZLIB REQUIRED)
-find_package(Freetype REQUIRED)
-find_package(JPEG REQUIRED)
-find_package(zstd REQUIRED)
-find_package(SDL3 REQUIRED)
-INJECT
-
-          # نضيف في أول السطر
-          cat /tmp/inject.cmake $SEARCH > /tmp/SearchForStuff_new.cmake
-          mv /tmp/SearchForStuff_new.cmake $SEARCH
-
-          echo "=== First 10 lines after patch ==="
-          head -10 $SEARCH
-          echo "Patch 4 ✅"
-
-      - name: ⚙️ Configure CMake for iOS
+      - name: Configure CMake for iOS
         run: |
-          CURL_PATH=$(brew --prefix curl)
           cmake -B build \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS \
@@ -96,22 +67,20 @@ INJECT
             -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
-            -DCURL_LIBRARY=$CURL_PATH/lib/libcurl.dylib \
-            -DCURL_INCLUDE_DIR=$CURL_PATH/include \
+            -DCURL_LIBRARY=$(brew --prefix curl)/lib/libcurl.dylib \
+            -DCURL_INCLUDE_DIR=$(brew --prefix curl)/include \
             -S src/armsx2/app/src/main/cpp
 
-      - name: 🔨 Build
-        run: |
-          cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
+      - name: Build
+        run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
-      - name: 📦 Package IPA
+      - name: Package IPA
         run: |
           mkdir -p output/Payload/BionicSX2.app
           find build -type f -perm +111 | head -10
           cd output && zip -r BionicSX2.ipa Payload/
-          echo "IPA packaged ✅"
 
-      - name: 🚀 Upload IPA Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: BionicSX2-IPA
