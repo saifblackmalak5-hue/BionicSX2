@@ -32,37 +32,20 @@ jobs:
           brew install molten-vk
           echo "MoltenVK installed ✅"
 
-      - name: 🔍 Inspect Source Structure
+      - name: 🔍 Inspect Full Source Structure
         run: |
-          echo "=== BionicSX2 Structure ==="
-          ls -la
-          echo "=== ARMSX2 Source ==="
+          echo "====== ROOT ======"
           ls -la src/armsx2/
-          echo "=== CMake files ==="
-          find src/armsx2 -name "CMakeLists.txt" | head -20
 
-      - name: ⚙️ Configure CMake for iOS
-        run: |
-          cmake -B build \
-            -G Ninja \
-            -DCMAKE_SYSTEM_NAME=iOS \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -S src/armsx2
+          echo "====== CMakeLists Hunt ======"
+          find src/armsx2 -name "CMakeLists.txt" 2>/dev/null
 
-      - name: 🔨 Build
-        run: |
-          cmake --build build --config Release
+          echo "====== cpp folder ======"
+          find src/armsx2 -name "*.cpp" | head -10
 
-      - name: 📦 Package IPA
-        run: |
-          mkdir -p output
-          echo "Packaging step - coming soon"
+          echo "====== Android JNI ======"
+          find src/armsx2 -name "Android.mk" -o -name "CMakeLists.txt" | head -20
 
-      - name: 🚀 Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: BionicSX2-IPA
-          path: output/*.ipa
-          retention-days: 7
+          echo "====== app/src/main/cpp ======"
+          ls src/armsx2/app/src/main/cpp/ 2>/dev/null || echo "Not found"
+
