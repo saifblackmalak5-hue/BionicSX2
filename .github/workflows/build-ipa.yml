@@ -97,6 +97,12 @@ namespace discord {
 STUB
           echo "Patch 6 done"
 
+      - name: Patch 6 - Discord stubs
+        run: |
+          BASE="src/armsx2/app/src/main/cpp"
+          printf '// BionicSX2 iOS stub\n#pragma once\n#include <string>\n#include <functional>\nnamespace discord {\n  struct Activity {};\n  struct User {};\n  struct ActivityManager {\n    void UpdateActivity(const Activity&, std::function<void(int)> cb) { if(cb) cb(0); }\n    void ClearActivity(std::function<void(int)> cb) { if(cb) cb(0); }\n  };\n  class Core {\n  public:\n    static int Create(long, uint64_t, Core**) { return 0; }\n    void RunCallbacks() {}\n    ActivityManager& GetActivityManager() { static ActivityManager am; return am; }\n  };\n}\n' > $BASE/3rdparty/discord-rpc/include/discordpp.h
+          echo "Patch 6 done"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
