@@ -74,10 +74,15 @@ jobs:
           printf '// iOS stub\n#include "CocoaTools.h"\n' > $BASE/common/CocoaTools.mm
           printf '// iOS stub\n#include "DarwinMisc.h"\nvoid MemProtect(void*, size_t, const char*) {}\n' > $BASE/common/Darwin/DarwinMisc.cpp
 
-      - name: Patch 7 - Fix VMManager Discord include
+      - name: Patch 7 - Fix Discord and AppKit
         run: |
-          FILE="src/armsx2/app/src/main/cpp/pcsx2/VMManager.cpp"
-          sed -i '' 's/#ifdef USE_DISCORD_SDK/#include "..\/3rdparty\/discord-rpc\/include\/discord_rpc.h"\n#ifdef USE_DISCORD_SDK/' $FILE
+          BASE="src/armsx2/app/src/main/cpp"
+          # نضيف discord_rpc.h في أول VMManager.cpp مباشرة
+          echo '#include "../3rdparty/discord-rpc/include/discord_rpc.h"' > /tmp/discord_prepend.txt
+          cat /tmp/discord_prepend.txt $BASE/pcsx2/VMManager.cpp > /tmp/vm_new.cpp
+          mv /tmp/vm_new.cpp $BASE/pcsx2/VMManager.cpp
+          # نصلح AppKit في GSDeviceMTL.h
+          sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ BionicSX2: AppKit disabled for iOS/g' $BASE/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
           echo "Patch 7 done"
 
       - name: Configure CMake for iOS
