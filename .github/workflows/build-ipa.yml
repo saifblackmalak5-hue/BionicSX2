@@ -44,7 +44,7 @@ jobs:
           sed -i '' 's/if(osx_arch_ppc64)/if(osx_arch_arm64)\n\t\tlist(APPEND ARCH aarch64)\n\t\tendif()\n\n\t\tif(osx_arch_ppc64)/g' $FILE
           echo "Patch 2 done"
 
-      - name: Patch 3 - Disable PCAP
+      - name: Patch 3 - Disable PCAP find
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
           sed -i '' 's/find_package(PCAP/# find_package(PCAP/g' $FILE
@@ -60,16 +60,16 @@ jobs:
           PNG=$(brew --prefix libpng)
           WEBP=$(brew --prefix webp)
           LZ4=$(brew --prefix lz4)
-          printf "find_package(ZLIB REQUIRED)\nif(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n  add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n  set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\nendif()\nset(FREETYPE_LIBRARY ${FT}/lib/libfreetype.dylib)\nset(FREETYPE_INCLUDE_DIRS ${FT}/include/freetype2)\nfind_package(Freetype REQUIRED)\nset(JPEG_LIBRARY ${JPEG}/lib/libjpeg.dylib)\nset(JPEG_INCLUDE_DIR ${JPEG}/include)\nfind_package(JPEG REQUIRED)\nadd_library(Zstd::Zstd UNKNOWN IMPORTED)\nset_target_properties(Zstd::Zstd PROPERTIES IMPORTED_LOCATION ${ZSTD}/lib/libzstd.dylib INTERFACE_INCLUDE_DIRECTORIES ${ZSTD}/include)\nset(PNG_LIBRARY ${PNG}/lib/libpng.dylib)\nset(PNG_PNG_INCLUDE_DIR ${PNG}/include)\nfind_package(PNG REQUIRED)\nset(SDL3_DIR ${SDL3}/lib/cmake/SDL3)\nfind_package(SDL3 REQUIRED)\nadd_library(WebP::libwebp UNKNOWN IMPORTED)\nset_target_properties(WebP::libwebp PROPERTIES IMPORTED_LOCATION ${WEBP}/lib/libwebp.dylib INTERFACE_INCLUDE_DIRECTORIES ${WEBP}/include)\nadd_library(LZ4::LZ4 UNKNOWN IMPORTED)\nset_target_properties(LZ4::LZ4 PROPERTIES IMPORTED_LOCATION ${LZ4}/lib/liblz4.dylib INTERFACE_INCLUDE_DIRECTORIES ${LZ4}/include)\n" > /tmp/inject.txt
+          printf "find_package(ZLIB REQUIRED)\nif(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n  add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n  set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\nendif()\nset(FREETYPE_LIBRARY ${FT}/lib/libfreetype.dylib)\nset(FREETYPE_INCLUDE_DIRS ${FT}/include/freetype2)\nfind_package(Freetype REQUIRED)\nset(JPEG_LIBRARY ${JPEG}/lib/libjpeg.dylib)\nset(JPEG_INCLUDE_DIR ${JPEG}/include)\nfind_package(JPEG REQUIRED)\nadd_library(Zstd::Zstd UNKNOWN IMPORTED)\nset_target_properties(Zstd::Zstd PROPERTIES IMPORTED_LOCATION ${ZSTD}/lib/libzstd.dylib INTERFACE_INCLUDE_DIRECTORIES ${ZSTD}/include)\nset(PNG_LIBRARY ${PNG}/lib/libpng.dylib)\nset(PNG_PNG_INCLUDE_DIR ${PNG}/include)\nfind_package(PNG REQUIRED)\nset(SDL3_DIR ${SDL3}/lib/cmake/SDL3)\nfind_package(SDL3 REQUIRED)\nadd_library(WebP::libwebp UNKNOWN IMPORTED)\nset_target_properties(WebP::libwebp PROPERTIES IMPORTED_LOCATION ${WEBP}/lib/libwebp.dylib INTERFACE_INCLUDE_DIRECTORIES ${WEBP}/include)\nadd_library(LZ4::LZ4 UNKNOWN IMPORTED)\nset_target_properties(LZ4::LZ4 PROPERTIES IMPORTED_LOCATION ${LZ4}/lib/liblz4.dylib INTERFACE_INCLUDE_DIRECTORIES ${LZ4}/include)\nadd_library(PCAP::PCAP INTERFACE IMPORTED)\n" > /tmp/inject.txt
           cat /tmp/inject.txt $FILE > /tmp/merged.txt
           mv /tmp/merged.txt $FILE
           echo "Patch 4 done"
 
-      - name: Patch 5 - Enable plutosvg bundled
+      - name: Patch 5 - Fix plutosvg
         run: |
           IMGUI="src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt"
           sed -i '' 's/plutosvg::plutosvg/plutosvg/g' $IMGUI
-          echo "Patch 5 done - plutosvg"
+          echo "Patch 5 done"
 
       - name: Configure CMake for iOS
         run: |
