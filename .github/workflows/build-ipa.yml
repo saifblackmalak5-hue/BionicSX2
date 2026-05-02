@@ -25,7 +25,7 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          brew install cmake ninja ccache curl
+          brew install cmake ninja ccache curl libpcap
           echo "Dependencies installed ✅"
 
       - name: 🌋 Setup MoltenVK
@@ -57,6 +57,7 @@ jobs:
       - name: ⚙️ Configure CMake for iOS
         run: |
           CURL_PATH=$(brew --prefix curl)
+          PCAP_PATH=$(brew --prefix libpcap)
           cmake -B build \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS \
@@ -68,6 +69,8 @@ jobs:
             -DVULKAN_INCLUDE_DIR=${{ env.MOLTENVK_PATH }}/include \
             -DCURL_LIBRARY=$CURL_PATH/lib/libcurl.dylib \
             -DCURL_INCLUDE_DIR=$CURL_PATH/include \
+            -DPCAP_LIBRARY=$PCAP_PATH/lib/libpcap.dylib \
+            -DPCAP_INCLUDE_DIR=$PCAP_PATH/include \
             -S src/armsx2/app/src/main/cpp
 
       - name: 🔨 Build
