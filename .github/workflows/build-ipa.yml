@@ -67,19 +67,36 @@ jobs:
 
       - name: Patch 5 - Fix plutosvg
         run: |
-          IMGUI="src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt"
-          sed -i '' 's/plutosvg::plutosvg/plutosvg/g' $IMGUI
+          sed -i '' 's/plutosvg::plutosvg/plutosvg/g' src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt
           echo "Patch 5 done"
 
-      - name: Patch 6 - Fix cubeb for iOS
+      - name: Patch 6 - Fix cubeb macOS files
         run: |
-          # نحذف الملفات الخاصة بـ macOS فقط
-          rm -f src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
-          rm -f src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_audiounit.cpp
-          # نستبدلها بملفات فارغة
-          echo "// Disabled for iOS - BionicSX2" > src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
-          echo "// Disabled for iOS - BionicSX2" > src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_audiounit.cpp
+          echo "// Disabled for iOS" > src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
+          echo "// Disabled for iOS" > src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_audiounit.cpp
           echo "Patch 6 done"
+
+      - name: Patch 7 - Fix macOS-only common files
+        run: |
+          BASE="src/armsx2/app/src/main/cpp/common"
+
+          # CocoaTools.mm - استبدال بـ iOS stub
+          cat > $BASE/CocoaTools.mm << 'STUB'
+// BionicSX2 - iOS stub for CocoaTools
+#include "CocoaTools.h"
+STUB
+
+          # DarwinMisc.cpp - إزالة macOS-only headers
+          cat > $BASE/Darwin/DarwinMisc.cpp << 'STUB'
+// BionicSX2 - iOS stub for DarwinMisc
+#include "DarwinMisc.h"
+#include <cstdlib>
+
+void MemProtect(void* baseaddr, size_t size, const char* mode) {}
+std::string GetOSVersionString() { return "iOS"; }
+STUB
+
+          echo "Patch 7 done"
 
       - name: Configure CMake for iOS
         run: |
