@@ -63,6 +63,7 @@ jobs:
         run: |
           cp ios/stubs/discordpp.h src/armsx2/app/src/main/cpp/3rdparty/discord-rpc/include/discordpp.h
           cp ios/stubs/discord_rpc.h src/armsx2/app/src/main/cpp/3rdparty/discord-rpc/include/discord_rpc.h
+          cp ios/stubs/discord_rpc.cpp src/armsx2/app/src/main/cpp/3rdparty/discord-rpc/src/discord_rpc.cpp
           sed -i '' 's/plutosvg::plutosvg/plutosvg/g' src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt
 
       - name: Patch 6 - iOS stubs for macOS files
