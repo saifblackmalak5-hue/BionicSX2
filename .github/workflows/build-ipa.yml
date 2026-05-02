@@ -33,8 +33,7 @@ jobs:
 
       - name: Patch 1 - iOS Platform
         run: |
-          FILE="src/armsx2/app/src/main/cpp/cmake/Pcsx2Utils.cmake"
-          sed -i '' 's/message(FATAL_ERROR "Unsupported platform.")/message(STATUS "iOS - BionicSX2")\n    set(IOS TRUE)/g' $FILE
+          sed -i '' 's/message(FATAL_ERROR "Unsupported platform.")/message(STATUS "iOS - BionicSX2")\n    set(IOS TRUE)/g' src/armsx2/app/src/main/cpp/cmake/Pcsx2Utils.cmake
 
       - name: Patch 2 - ARM64 Architecture
         run: |
@@ -61,7 +60,16 @@ jobs:
           mv /tmp/merged.txt $FILE
 
       - name: Patch 5 - Fix plutosvg
-        run: sed -i '' 's/plutosvg::plutosvg/plutosvg/g' src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt
+        run: |
+          sed -i '' 's/plutosvg::plutosvg/plutosvg/g' src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt
+
+      - name: Patch 6 - iOS stubs for macOS files
+        run: |
+          BASE="src/armsx2/app/src/main/cpp"
+          printf '// iOS stub\n' > $BASE/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
+          printf '// iOS stub\n' > $BASE/3rdparty/cubeb/src/cubeb_audiounit.cpp
+          printf '// iOS stub\n#include "CocoaTools.h"\n' > $BASE/common/CocoaTools.mm
+          printf '// iOS stub\n#include "DarwinMisc.h"\nvoid MemProtect(void*, size_t, const char*) {}\n' > $BASE/common/Darwin/DarwinMisc.cpp
 
       - name: Configure CMake for iOS
         run: |
