@@ -91,6 +91,7 @@ jobs:
           # رفع الـ deployment target لـ iOS 16 لحل MTLSharedEvent
           # نستبدل macOS-only Metal feature sets
                     # نحذف NSView من GSDeviceMTL.h
+          cp ios/stubs/GSMTLDeviceInfo.mm src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSMTLDeviceInfo.mm
           sed -i '' 's/MRCOwned<NSView\*> m_view;//g' $BASE/GSDeviceMTL.h
           sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ AppKit disabled for iOS/g' $BASE/GSDeviceMTL.h
           # نرفع deployment target
