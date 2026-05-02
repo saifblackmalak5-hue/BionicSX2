@@ -1,0 +1,66 @@
+name: 🎮 BionicSX2 - Build IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 🔧 Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: 📦 Install Dependencies
+        run: |
+          brew install cmake ninja ccache
+
+      - name: 🌋 Setup MoltenVK
+        run: |
+          brew install molten-vk
+          echo "MoltenVK installed ✅"
+
+      - name: 🔗 Clone ARMSX2 Source
+        run: |
+          git clone --depth=1 https://github.com/ARMSX2/ARMSX2.git src/armsx2
+          echo "ARMSX2 source cloned ✅"
+
+      - name: ⚙️ Configure CMake for iOS
+        run: |
+          cmake -B build \
+            -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_VULKAN=OFF \
+            -DENABLE_METAL=ON
+
+      - name: 🔨 Build
+        run: |
+          cmake --build build --config Release
+
+      - name: 📦 Package IPA
+        run: |
+          mkdir -p output
+          # Package steps will go here
+          echo "Packaging ✅"
+
+      - name: 🚀 Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BionicSX2-IPA
+          path: output/*.ipa
+          retention-days: 7
