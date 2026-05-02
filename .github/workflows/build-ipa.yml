@@ -73,15 +73,13 @@ jobs:
 
       - name: Patch 6 - Fix cubeb for iOS
         run: |
-          FILE="src/armsx2/app/src/main/cpp/3rdparty/cubeb/CMakeLists.txt"
-          # نعطّل macOS-only files
-          sed -i '' 's/cubeb_osx_run_loop.cpp/# cubeb_osx_run_loop.cpp/g' $FILE
-          sed -i '' 's/cubeb_audiounit.cpp/# cubeb_audiounit.cpp/g' $FILE
-          # نعطّل USE_AUDIOUNIT على macOS
-          sed -i '' 's/add_compile_definitions(USE_AUDIOUNIT)/# add_compile_definitions(USE_AUDIOUNIT)/g' $FILE
-          sed -i '' 's/target_compile_definitions.*USE_AUDIOUNIT.*/# USE_AUDIOUNIT disabled for iOS/g' $FILE
+          # نحذف الملفات الخاصة بـ macOS فقط
+          rm -f src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
+          rm -f src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_audiounit.cpp
+          # نستبدلها بملفات فارغة
+          echo "// Disabled for iOS - BionicSX2" > src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
+          echo "// Disabled for iOS - BionicSX2" > src/armsx2/app/src/main/cpp/3rdparty/cubeb/src/cubeb_audiounit.cpp
           echo "Patch 6 done"
-          grep -n "audiounit\|osx_run_loop\|USE_AUDIOUNIT" $FILE | head -10
 
       - name: Configure CMake for iOS
         run: |
