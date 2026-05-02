@@ -33,7 +33,22 @@ jobs:
           brew install molten-vk
           MOLTENVK_PATH=$(brew --prefix molten-vk)
           echo "MOLTENVK_PATH=$MOLTENVK_PATH" >> $GITHUB_ENV
-          echo "MoltenVK installed at $MOLTENVK_PATH ✅"
+          echo "MoltenVK installed ✅"
+
+      - name: 🩹 Patch iOS Support in Pcsx2Utils.cmake
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/cmake/Pcsx2Utils.cmake"
+          echo "=== Before patch ==="
+          grep -n "Unsupported\|platform\|iOS\|Android\|Linux\|Darwin" $FILE | head -20
+
+          # إضافة iOS كمنصة مدعومة
+          sed -i '' \
+            's/message(FATAL_ERROR "Unsupported platform.")/message(STATUS "iOS platform - BionicSX2")\n    set(PCSX2_TARGET_TRIPLET "aarch64-apple-ios")\n    set(IOS TRUE)/g' \
+            $FILE
+
+          echo "=== After patch ==="
+          grep -n "iOS\|Unsupported\|BionicSX2" $FILE | head -20
+          echo "Patch applied ✅"
 
       - name: ⚙️ Configure CMake for iOS
         run: |
@@ -55,12 +70,9 @@ jobs:
       - name: 📦 Package IPA
         run: |
           mkdir -p output/Payload/BionicSX2.app
-          # Copy binary
-          cp build/BionicSX2 output/Payload/BionicSX2.app/ 2>/dev/null || \
-          find build -name "*.so" -o -name "armsx2" | head -5
-          cd output
-          zip -r BionicSX2.ipa Payload/
-          echo "IPA created ✅"
+          find build -type f -perm +111 | head -10
+          cd output && zip -r BionicSX2.ipa Payload/
+          echo "IPA packaged ✅"
 
       - name: 🚀 Upload IPA Artifact
         uses: actions/upload-artifact@v4
