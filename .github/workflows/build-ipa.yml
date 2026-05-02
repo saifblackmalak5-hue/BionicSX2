@@ -82,6 +82,7 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
+            -DUSE_DISCORD_SDK=ON \
             -DCURL_LIBRARY=$(brew --prefix curl)/lib/libcurl.dylib \
             -DCURL_INCLUDE_DIR=$(brew --prefix curl)/include \
             -S src/armsx2/app/src/main/cpp
@@ -107,5 +108,4 @@ jobs:
           sed -i '' 's/find_package(DiscordRPC/# find_package(DiscordRPC/g' $FILE
           # نضيف define لتعطيل Discord
           FILE2="src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake"
-          echo 'add_compile_definitions(DISABLE_DISCORD_RPC)' >> $FILE2
           echo "Patch 7 done"
