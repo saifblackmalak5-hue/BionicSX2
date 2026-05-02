@@ -25,7 +25,7 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          brew install cmake ninja ccache
+          brew install cmake ninja ccache curl
           echo "Dependencies installed ✅"
 
       - name: 🌋 Setup MoltenVK
@@ -46,22 +46,17 @@ jobs:
       - name: 🩹 Patch 2 - Add arm64 to TargetArch.cmake
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/TargetArch.cmake"
-          # نضيف arm64 قبل الـ else() مباشرة
           sed -i '' \
             's/elseif("${osx_arch}" STREQUAL "ppc64" AND ppc_support)/elseif("${osx_arch}" STREQUAL "arm64")\n\t\t\t\tset(osx_arch_arm64 TRUE)\n\t\t\telseif("${osx_arch}" STREQUAL "ppc64" AND ppc_support)/g' \
             $FILE
-
-          # نضيف arm64 في قسم الـ ARCH list
           sed -i '' \
             's/if(osx_arch_ppc64)/if(osx_arch_arm64)\n\t\tlist(APPEND ARCH aarch64)\n\t\tendif()\n\n\t\tif(osx_arch_ppc64)/g' \
             $FILE
-
-          echo "=== Verification ==="
-          grep -n "arm64\|aarch64" $FILE
           echo "Patch 2 ✅"
 
       - name: ⚙️ Configure CMake for iOS
         run: |
+          CURL_PATH=$(brew --prefix curl)
           cmake -B build \
             -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS \
@@ -71,6 +66,8 @@ jobs:
             -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
             -DVULKAN_LIBRARY=${{ env.MOLTENVK_PATH }}/lib/libMoltenVK.dylib \
             -DVULKAN_INCLUDE_DIR=${{ env.MOLTENVK_PATH }}/include \
+            -DCURL_LIBRARY=$CURL_PATH/lib/libcurl.dylib \
+            -DCURL_INCLUDE_DIR=$CURL_PATH/include \
             -S src/armsx2/app/src/main/cpp
 
       - name: 🔨 Build
