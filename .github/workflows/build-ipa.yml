@@ -85,6 +85,19 @@ jobs:
           sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ BionicSX2: AppKit disabled for iOS/g' $BASE/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
           echo "Patch 7 done"
 
+      - name: Patch 8 - Fix Metal macOS-only APIs
+        run: |
+          BASE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal"
+          # رفع الـ deployment target لـ iOS 16 لحل MTLSharedEvent
+          # نستبدل macOS-only Metal feature sets
+          sed -i '' 's/MTLFeatureSet_macOS_GPUFamily[^,]*/MTLFeatureSet_iOS_GPUFamily5_v1/g' $BASE/GSMTLDeviceInfo.mm
+          # نحذف NSView من GSDeviceMTL.h
+          sed -i '' 's/MRCOwned<NSView\*> m_view;//g' $BASE/GSDeviceMTL.h
+          sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ AppKit disabled for iOS/g' $BASE/GSDeviceMTL.h
+          # نرفع deployment target
+          sed -i '' 's/-miphoneos-version-min=11.0/-miphoneos-version-min=16.0/g' build/build.ninja 2>/dev/null || true
+          echo "Patch 8 done"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
