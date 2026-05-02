@@ -71,6 +71,32 @@ jobs:
           printf '// iOS stub\n#include "CocoaTools.h"\n' > $BASE/common/CocoaTools.mm
           printf '// iOS stub\n#include "DarwinMisc.h"\nvoid MemProtect(void*, size_t, const char*) {}\n' > $BASE/common/Darwin/DarwinMisc.cpp
 
+      - name: Patch 6 - Discord stubs
+        run: |
+          BASE="src/armsx2/app/src/main/cpp"
+          # discordpp.h stub
+          cat > $BASE/3rdparty/discord-rpc/include/discordpp.h << 'STUB'
+// BionicSX2 iOS stub
+#pragma once
+#include <string>
+#include <functional>
+namespace discord {
+    struct Activity {};
+    struct User {};
+    struct ActivityManager {
+        void UpdateActivity(const Activity&, std::function<void(int)> cb) { if(cb) cb(0); }
+        void ClearActivity(std::function<void(int)> cb) { if(cb) cb(0); }
+    };
+    class Core {
+    public:
+        static int Create(long, uint64_t, Core**) { return 0; }
+        void RunCallbacks() {}
+        ActivityManager& GetActivityManager() { static ActivityManager am; return am; }
+    };
+}
+STUB
+          echo "Patch 6 done"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
