@@ -74,6 +74,12 @@ jobs:
           printf '// iOS stub\n#include "CocoaTools.h"\n' > $BASE/common/CocoaTools.mm
           printf '// iOS stub\n#include "DarwinMisc.h"\nvoid MemProtect(void*, size_t, const char*) {}\n' > $BASE/common/Darwin/DarwinMisc.cpp
 
+      - name: Patch 7 - Fix VMManager Discord include
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/VMManager.cpp"
+          sed -i '' 's/#ifdef USE_DISCORD_SDK/#include "..\/3rdparty\/discord-rpc\/include\/discord_rpc.h"\n#ifdef USE_DISCORD_SDK/' $FILE
+          echo "Patch 7 done"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
