@@ -1,7 +1,7 @@
-// BionicSX2 iOS stub for GSMTLDeviceInfo
+// BionicSX2 iOS stub
 #include "GSMTLDeviceInfo.h"
 
-GSMTLDevice GSMTLDevice::GetForMTLDevice(id<MTLDevice> dev)
+GSMTLDevice GSMTLDevice::GetForMTLDevice(MRCOwned<id<MTLDevice>> dev)
 {
     GSMTLDevice result;
     result.features.max_texsize = 16384;

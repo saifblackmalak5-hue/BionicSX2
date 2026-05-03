@@ -124,6 +124,7 @@ jobs:
           sed -i '' '/afterStages:MTLRenderStageFragment/d' $FILE
           sed -i '' '/inFileViewerRootedAtPath/d' $FILE
           sed -i '' '/MTLFeatureSet_macOS/d' $FILE
+          sed -i '' '/MTLCopyAllDevices/d' $FILE
           echo "Patch 10 done"
 
       - name: Configure CMake for iOS
