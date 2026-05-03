@@ -236,7 +236,12 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p output/Payload/BionicSX2.app
-          find build -type f -perm +111 | head -10
+          echo "=== Executables ==="
+          find build -type f -perm +111 | grep -v CMake | grep -v ".bin" | head -20
+          echo "=== Libraries ==="
+          find build -name "*.a" | head -10
+          echo "=== All build files ==="
+          ls build/
           cd output && zip -r BionicSX2.ipa Payload/
 
       - name: Upload IPA
