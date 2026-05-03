@@ -130,6 +130,8 @@ jobs:
           sed -i '' '/if (\[\[dev name\]/d' $FILE
           sed -i '' '/ai.name = \[\[dev name\]/d' $FILE
           sed -i '' '/for (id<MTLDevice> dev in/d' $FILE
+          sed -i '' '/features.max_texsize = 16384/d' $FILE
+          sed -i '' '/if (\[dev supports/d' $FILE
           echo "Patch 10 done"
 
       - name: Configure CMake for iOS
