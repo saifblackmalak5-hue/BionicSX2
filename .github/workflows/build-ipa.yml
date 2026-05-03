@@ -106,6 +106,7 @@ jobs:
           find src/armsx2 -name "*.cmake" | xargs grep -l "miphoneos-version-min" 2>/dev/null | while read f; do
             sed -i '' 's/-miphoneos-version-min=[0-9.]*/-miphoneos-version-min=16.0/g' "$f"
           done
+          sed -i '' 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)/set(CMAKE_OSX_DEPLOYMENT_TARGET 16.0)/g' src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake
           echo "Patch 9 done"
 
       - name: Configure CMake for iOS
