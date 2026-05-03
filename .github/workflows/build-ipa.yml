@@ -206,6 +206,14 @@ jobs:
           sed -i '' 's/armMOVMSKPS(EAX, xmm0)/armMOVMSKPS(EAX, a64::QRegister(0))/g' $FILE
           echo "Patch 15 done"
 
+      - name: Patch 16 - Fix DEV9 network headers for iOS
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp"
+          sed -i '' 's/#include <net\/route.h>/\/\/ iOS: net\/route.h disabled/g' $FILE
+          sed -i '' 's/#include <net\/if_dl.h>/\/\/ iOS: net\/if_dl.h disabled/g' $FILE
+          sed -i '' 's/#include <ifaddrs.h>/\/\/ iOS: ifaddrs.h disabled/g' $FILE
+          echo "Patch 16 done"
+
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
