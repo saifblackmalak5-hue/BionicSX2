@@ -11,7 +11,7 @@ GSMTLDevice::GSMTLDevice(MRCOwned<id<MTLDevice>> dev)
     features.framebuffer_fetch = false;
     features.primid = false;
     features.has_fast_half = true;
-    features.shader_version = Features::MetalVersion::Metal23;
+    features.shader_version = GSMTLDevice::MetalVersion::Metal23;
 }
 
 const char* to_string(GSMTLDevice::MetalVersion ver) { return "iOS"; }
