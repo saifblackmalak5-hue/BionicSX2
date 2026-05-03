@@ -120,6 +120,9 @@ jobs:
           sed -i '' '/m_view setWantsLayer/d' $FILE
           sed -i '' '/MTLBarrierScopeRenderTargets/d' $FILE
           sed -i '' '/memoryBarrierWithScope/d' $FILE
+          sed -i '' '/beforeStages:MTLRenderStageFragment/d' $FILE
+          sed -i '' '/afterStages:MTLRenderStageFragment/d' $FILE
+          sed -i '' '/inFileViewerRootedAtPath/d' $FILE
           echo "Patch 10 done"
 
       - name: Configure CMake for iOS
