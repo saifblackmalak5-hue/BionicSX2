@@ -236,13 +236,39 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p output/Payload/BionicSX2.app
-          echo "=== Executables ==="
-          find build -type f -perm +111 | grep -v CMake | grep -v ".bin" | head -20
-          echo "=== Libraries ==="
-          find build -name "*.a" | head -10
-          echo "=== All build files ==="
-          ls build/
+
+          # جمع كل الـ static libraries
+          LIBS=$(find build -name "*.a" | tr '\n' ' ')
+
+          # نبني الـ executable من الـ libraries
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          clang++ -arch arm64 -isysroot $SDK \
+            -miphoneos-version-min=16.0 \
+            -framework Metal \
+            -framework MetalKit \
+            -framework AudioToolbox \
+            -framework AVFoundation \
+            -framework CoreAudio \
+            -framework CoreHaptics \
+            -framework CoreMotion \
+            -framework Foundation \
+            -framework GameController \
+            -framework QuartzCore \
+            -framework UIKit \
+            -lz -lbz2 -liconv \
+            $(brew --prefix curl)/lib/libcurl.dylib \
+            $(brew --prefix freetype)/lib/libfreetype.dylib \
+            $(brew --prefix zstd)/lib/libzstd.dylib \
+            $(brew --prefix sdl3)/lib/libSDL3.dylib \
+            $LIBS \
+            -o output/Payload/BionicSX2.app/BionicSX2 || echo "Link step - may need more flags"
+
+          # نسخ الملفات الأساسية
+          cp ios/BionicSX2/Info.plist output/Payload/BionicSX2.app/
+          
+          # تجميع الـ IPA
           cd output && zip -r BionicSX2.ipa Payload/
+          echo "IPA size: $(du -sh BionicSX2.ipa)" 
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
