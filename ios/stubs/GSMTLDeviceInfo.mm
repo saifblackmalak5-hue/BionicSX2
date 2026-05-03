@@ -1,13 +1,17 @@
 // BionicSX2 iOS stub
 #include "GSMTLDeviceInfo.h"
 
-GSMTLDevice GSMTLDevice::GetForMTLDevice(MRCOwned<id<MTLDevice>> dev)
+GSMTLDevice::GSMTLDevice(MRCOwned<id<MTLDevice>> dev)
+    : dev(std::move(dev))
 {
-    GSMTLDevice result;
-    result.features.max_texsize = 16384;
-    result.features.slow_color_compression = false;
-    result.dev = std::move(dev);
-    return result;
+    features.max_texsize = 16384;
+    features.slow_color_compression = false;
+    features.unified_memory = true;
+    features.texture_swizzle = true;
+    features.framebuffer_fetch = false;
+    features.primid = false;
+    features.has_fast_half = true;
+    features.shader_version = Features::MetalVersion::Metal23;
 }
 
 const char* to_string(GSMTLDevice::MetalVersion ver) { return "iOS"; }
