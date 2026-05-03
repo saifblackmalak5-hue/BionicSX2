@@ -162,6 +162,7 @@ jobs:
           sed -i '' 's/armAsm->Mov(a64::QRegister(reg), xmm0)/armAsm->Mov(a64::QRegister(reg).Q(), a64::QRegister(0).Q())/g' $FILE
           FILE2="src/armsx2/app/src/main/cpp/pcsx2/x86/microVU.h"
           sed -i '' 's/alignas(64) VU_Thread/alignas(128) VU_Thread/g' $FILE2
+          sed -i '' 's/alignas(64) extern vuRegistersPack/alignas(128) extern vuRegistersPack/g' $FILE2
           echo "Patch 12 done"
 
       - name: Patch 13 - Fix GetCode to GetId
