@@ -164,6 +164,14 @@ jobs:
           sed -i '' 's/alignas(64) VU_Thread/alignas(128) VU_Thread/g' $FILE2
           echo "Patch 12 done"
 
+      - name: Patch 13 - Fix GetCode to GetId
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/ix86-32/recVTLB.cpp"
+          sed -i '' 's/xmm0\.GetCode()/xmm0.GetId()/g' $FILE
+          FILE2="src/armsx2/app/src/main/cpp/pcsx2/x86/microVU_IR.h"
+          sed -i '' 's/xmmPQ\.GetCode()/xmmPQ.GetId()/g' $FILE2
+          echo "Patch 13 done"
+
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
