@@ -98,6 +98,16 @@ jobs:
           sed -i '' 's/-miphoneos-version-min=11.0/-miphoneos-version-min=16.0/g' build/build.ninja 2>/dev/null || true
           echo "Patch 8 done"
 
+      - name: Patch 9 - Fix deployment target
+        run: |
+          find src/armsx2 -name "CMakeLists.txt" | xargs grep -l "miphoneos-version-min" | while read f; do
+            sed -i '' 's/-miphoneos-version-min=[0-9.]*/-miphoneos-version-min=16.0/g' "$f"
+          done
+          find src/armsx2 -name "*.cmake" | xargs grep -l "miphoneos-version-min" 2>/dev/null | while read f; do
+            sed -i '' 's/-miphoneos-version-min=[0-9.]*/-miphoneos-version-min=16.0/g' "$f"
+          done
+          echo "Patch 9 done"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
