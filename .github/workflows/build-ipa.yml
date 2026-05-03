@@ -174,6 +174,17 @@ jobs:
           sed -i '' 's/xmmPQ\.GetId()/xmmPQ.GetCode()/g' $FILE2
           echo "Patch 13 done"
 
+      - name: Patch 14 - Fix xmm2 Ldr in microVU_Execute
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/microVU_Execute.inl"
+          sed -i '' 's/armAsm->Ldr(xmm2,/armAsm->Ldr(a64::QRegister(2).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Ldr(xmm0,/armAsm->Ldr(a64::QRegister(0).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Ldr(xmm1,/armAsm->Ldr(a64::QRegister(1).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Str(xmm2,/armAsm->Str(a64::QRegister(2).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Str(xmm0,/armAsm->Str(a64::QRegister(0).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Str(xmm1,/armAsm->Str(a64::QRegister(1).Q(),/g' $FILE
+          echo "Patch 14 done"
+
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
