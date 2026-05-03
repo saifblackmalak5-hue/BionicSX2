@@ -211,7 +211,8 @@ jobs:
           FILE="src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp"
           sed -i '' 's/#include <net\/route.h>/\/\/ iOS: net\/route.h disabled/g' $FILE
           sed -i '' 's/#include <net\/if_dl.h>/\/\/ iOS: net\/if_dl.h disabled/g' $FILE
-          sed -i '' 's/#include <ifaddrs.h>/\/\/ iOS: ifaddrs.h disabled/g' $FILE
+          # Replace entire file with stub
+          cp ios/stubs/AdapterUtils.cpp src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp
           echo "Patch 16 done"
 
       - name: Build
