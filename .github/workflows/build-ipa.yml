@@ -109,6 +109,23 @@ jobs:
           sed -i '' 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)/set(CMAKE_OSX_DEPLOYMENT_TARGET 16.0)/g' src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake
           echo "Patch 9 done"
 
+      - name: Patch 10 - Fix GSDeviceMTL macOS APIs
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm"
+          # setDisplaySyncEnabled - macOS only
+          sed -i '' 's/\[m_layer setDisplaySyncEnabled:[^]]*\];//g' $FILE
+          # NSView - replace with UIView for iOS
+          sed -i '' 's/NSView\*/UIView*/g' $FILE
+          sed -i '' 's/__bridge NSView\*/__bridge UIView*/g' $FILE
+          sed -i '' 's/\[m_view setWantsLayer:YES\];//g' $FILE
+          sed -i '' 's/\[m_view setWantsLayer:NO\];//g' $FILE
+          # NSWorkspace - macOS only, disable
+          sed -i '' 's/\[\[NSWorkspace sharedWorkspace\][^;]*;//g' $FILE
+          # MTLBarrierScopeRenderTargets - wrap with TARGET_OS check
+          sed -i '' 's/\[enc memoryBarrierWithScope:MTLBarrierScopeRenderTargets/#if !TARGET_OS_IOS\n        [enc memoryBarrierWithScope:MTLBarrierScopeRenderTargets/g' $FILE
+          sed -i '' 's/beforeStages:MTLRenderStageFragment\];/beforeStages:MTLRenderStageFragment];\n#endif/g' $FILE
+          echo "Patch 10 done"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
