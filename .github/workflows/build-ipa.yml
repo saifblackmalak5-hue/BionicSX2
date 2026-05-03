@@ -186,6 +186,12 @@ jobs:
           sed -i '' 's/armAsm->Str(xmm2,/armAsm->Str(a64::QRegister(2).Q(),/g' $FILE
           sed -i '' 's/armAsm->Str(xmm0,/armAsm->Str(a64::QRegister(0).Q(),/g' $FILE
           sed -i '' 's/armAsm->Str(xmm1,/armAsm->Str(a64::QRegister(1).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Str(xmm5,/armAsm->Str(a64::QRegister(5).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Str(xmm4,/armAsm->Str(a64::QRegister(4).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Str(xmm3,/armAsm->Str(a64::QRegister(3).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Ldr(xmm5,/armAsm->Ldr(a64::QRegister(5).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Ldr(xmm4,/armAsm->Ldr(a64::QRegister(4).Q(),/g' $FILE
+          sed -i '' 's/armAsm->Ldr(xmm3,/armAsm->Ldr(a64::QRegister(3).Q(),/g' $FILE
           echo "Patch 14 done"
 
       - name: Patch 15 - Fix xmm VRegister methods in microVU_Execute
