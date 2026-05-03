@@ -170,6 +170,8 @@ jobs:
           sed -i '' 's/xmm0\.GetCode()/xmm0.GetId()/g' $FILE
           FILE2="src/armsx2/app/src/main/cpp/pcsx2/x86/microVU_IR.h"
           sed -i '' 's/xmmPQ\.GetCode()/xmmPQ.GetId()/g' $FILE2
+          sed -i '' 's/armAsm->Mov(a64::QRegister(data_register), xmm0)/armAsm->Mov(a64::QRegister(data_register).Q(), a64::QRegister(0).Q())/g' $FILE
+          sed -i '' 's/xmmPQ\.GetId()/xmmPQ.GetCode()/g' $FILE2
           echo "Patch 13 done"
 
       - name: Build
