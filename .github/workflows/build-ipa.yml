@@ -126,6 +126,10 @@ jobs:
           sed -i '' '/MTLFeatureSet_macOS/d' $FILE
           sed -i '' '/MTLCopyAllDevices/d' $FILE
           sed -i '' '/for (id<MTLDevice> dev in devs/d' $FILE
+          sed -i '' '/m_dev = GSMTLDevice(MRCRetain(dev))/d' $FILE
+          sed -i '' '/if (\[\[dev name\]/d' $FILE
+          sed -i '' '/ai.name = \[\[dev name\]/d' $FILE
+          sed -i '' '/for (id<MTLDevice> dev in/d' $FILE
           echo "Patch 10 done"
 
       - name: Configure CMake for iOS
