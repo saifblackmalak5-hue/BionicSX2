@@ -214,6 +214,10 @@ jobs:
           # Replace entire file with stub
           cp ios/stubs/AdapterUtils.cpp src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp
           find src/armsx2/app/src/main/cpp/pcsx2/DEV9 -name "*.cpp" -o -name "*.h" | xargs grep -l "net/route.h\|net/if_dl.h" | xargs sed -i '' 's/#include <net\/route.h>/\/\/ iOS disabled/g;s/#include <net\/if_dl.h>/\/\/ iOS disabled/g'
+          mkdir -p src/armsx2/app/src/main/cpp/3rdparty/oboe/include/oboe
+          cp ios/stubs/oboe/Oboe.h src/armsx2/app/src/main/cpp/3rdparty/oboe/include/oboe/Oboe.h
+          cp ios/stubs/plutovg.h src/armsx2/app/src/main/cpp/3rdparty/plutosvg/plutovg/include/plutovg.h 2>/dev/null || true
+          find src/armsx2/app/src/main/cpp -name "*.cpp" -o -name "*.h" | xargs grep -l "plutovg.h" 2>/dev/null | xargs sed -i '' 's/#include "plutovg.h"/\/\/ iOS disabled/g' 2>/dev/null || true
           echo "Patch 16 done"
 
       - name: Build
