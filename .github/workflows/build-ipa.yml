@@ -147,7 +147,7 @@ jobs:
             -DUSE_DISCORD_SDK=ON \
             -DCURL_LIBRARY=$(brew --prefix curl)/lib/libcurl.dylib \
             -DCURL_INCLUDE_DIR=$(brew --prefix curl)/include \
-            -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include" \
+            -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source" \
             -S src/armsx2/app/src/main/cpp
 
       - name: Patch 11 - Fix xmm0.Q() in recVTLB
