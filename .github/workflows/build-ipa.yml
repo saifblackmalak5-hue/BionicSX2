@@ -220,7 +220,7 @@ jobs:
           find src/armsx2/app/src/main/cpp -name "*.cpp" -o -name "*.h" | xargs grep -l "plutovg.h" 2>/dev/null | xargs sed -i '' 's/#include "plutovg.h"/\/\/ iOS disabled/g' 2>/dev/null || true
           BASE="src/armsx2/app/src/main/cpp"
           sed -i '' 's|#include "plutovg.h"|#include "../../../3rdparty/plutosvg1/plutovg/include/plutovg.h"|g' $BASE/pcsx2/ImGui/ImGuiFullscreen.cpp
-          sed -i '' 's|#include <oboe/Oboe.h>|// iOS: Oboe disabled|g' $BASE/pcsx2/Host/OboeAudioStream.cpp
+          printf "// BionicSX2 iOS stub\n#include \"AudioStream.h\"\n" > $BASE/pcsx2/Host/OboeAudioStream.cpp
           echo "Patch 16 done"
 
       - name: Build
