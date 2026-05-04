@@ -115,6 +115,28 @@ jobs:
           sed -i '' 's/cmake_minimum_required(VERSION 2.8.12)/cmake_minimum_required(VERSION 3.5)/g' src/armsx2/app/src/main/cpp/3rdparty/freetype/CMakeLists.txt
           echo "Patch 11 done"
 
+      - name: Build libpng for iOS
+        run: |
+          # Download and build libpng for iOS arm64
+          cd /tmp
+          rm -rf libpng-1.6.40
+          curl -LO https://download.sourceforge.net/libpng/libpng16/1.6.40/libpng-1.6.40.tar.gz
+          tar xzf libpng-1.6.40.tar.gz
+          cd libpng-1.6.40
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          # Create pnglibconf.h (minimal config for iOS)
+          cp scripts/pnglibconf.h.prebuilt pnglibconf.h
+          # Compile all .c files
+          for f in *.c; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f" .c)
+            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0               -I. -I./scripts               -c "$f" -o "${base}.o"
+          done
+          # Create static library
+          ar rcs /tmp/libpng.a *.o
+          ls -la /tmp/libpng.a
+          echo "libpng.a built successfully"
+
       - name: Configure CMake for iOS
         run: |
           cmake -B build \
@@ -209,22 +231,6 @@ jobs:
           printf '// BionicSX2 iOS stub\n' > $BASE/pcsx2/CDVD/Darwin/DriveUtility.cpp
           printf "// BionicSX2 iOS stub\n" > $BASE/pcsx2/CDVD/Darwin/IOCtlSrc.cpp
           echo "Patch 18 done"
-
-      - name: Build libpng for iOS
-        run: |
-          cd /tmp
-          curl -LO https://download.sourceforge.net/libpng/libpng16/1.6.40/libpng-1.6.40.tar.gz
-          tar xzf libpng-1.6.40.tar.gz
-          cd libpng-1.6.40
-          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          # Compile all .c files for iOS arm64
-          for f in *.c; do
-            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0 -I. -c $f -o $(basename $f .c).o
-          done
-          # Create static library
-          ar rcs /tmp/libpng.a *.o
-          ls -la /tmp/libpng.a
-          echo "libpng.a built successfully"
 
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
