@@ -123,7 +123,7 @@ jobs:
           python3 ios-append-alias.py
           echo "Patch 11 done"
 
-  - name: Configure CMake for iOS
+      - name: Configure CMake for iOS
         run: |
           cmake -B build \
             -G Ninja \
