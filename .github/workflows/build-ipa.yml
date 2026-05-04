@@ -126,6 +126,7 @@ jobs:
           # Fix CMake minimum version for compatibility with modern CMake
           cd libpng-1.6.40
           sed -i '' 's/cmake_minimum_required(VERSION 3.1)/cmake_minimum_required(VERSION 3.5)/g' CMakeLists.txt
+          sed -i '' 's/cmake_policy(VERSION 3.1)/cmake_policy(VERSION 3.5)/g' CMakeLists.txt
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           # Configure libpng for iOS using CMake
           cd /tmp
