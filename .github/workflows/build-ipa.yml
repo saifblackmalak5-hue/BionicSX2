@@ -229,13 +229,6 @@ jobs:
             exit 1
           fi
 
-          # Use -force_load for each static library to include all code
-          LIBS=$(cat /tmp/libs.txt | sed 's/^/-force_load /' | tr '\n' ' ')
-
-          # Debug: show what LIBS contains
-          echo "LIBS contents (first 500 chars): $(echo $LIBS | cut -c1-500)"
-          echo "Number of -force_load entries: $(echo $LIBS | grep -o force_load | wc -l)"
-
           # Set iOS SDK path
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
@@ -248,11 +241,16 @@ jobs:
             -c ios/BionicSX2/main.m \
             -o output/Payload/BionicSX2.app/main.o
 
+          # Create linker command with -all_load to force all libraries to be loaded
+          LIBS=$(cat /tmp/libs.txt | tr '\n' ' ')
+
           # Link executable using static libraries only (no macOS dylibs)
+          # Use -all_load to force all code from static libraries to be included
           clang++ -arch arm64 \
             -isysroot $SDK \
             -miphoneos-version-min=16.0 \
             -stdlib=libc++ \
+            -all_load \
             \
             -framework Metal \
             -framework MetalKit \
@@ -273,7 +271,18 @@ jobs:
             output/Payload/BionicSX2.app/main.o \
             $LIBS \
             \
-            -o output/Payload/BionicSX2.app/BionicSX2
+            -o output/Payload/BionicSX2.app/BionicSX2 \
+            2>/tmp/linker_error.txt || true
+
+          # Show linker errors
+          echo "=== Linker Errors ==="
+          cat /tmp/linker_error.txt
+
+          # Check if executable was created
+          if [ ! -f output/Payload/BionicSX2.app/BionicSX2 ]; then
+            echo "ERROR: Executable was not created!"
+            exit 1
+          fi
 
           echo "=== Executable size after linking ==="
           ls -la output/Payload/BionicSX2.app/BionicSX2
