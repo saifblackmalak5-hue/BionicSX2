@@ -1,40 +1,73 @@
 import os
 
 filepath = "src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-with open(filepath, 'r') as f:
-    content = f.read()
 
-# Step 1: Add elseif(IOS) block with add_subdirectory calls (mirroring ANDROID)
-# Find the ANDROID block and add elseif(IOS) before the else() block
-android_block_end = content.find('else()\n\tfind_package(CURL')
-if android_block_end == -1:
-    print("ERROR: Could not find ANDROID block end")
+with open(filepath, 'r') as f:
+    lines = f.readlines()
+
+# Step 1: Remove any existing elseif(IOS) block
+# (in case we're running this multiple times)
+new_lines = []
+skip_until_endif = False
+for i, line in enumerate(lines):
+    if 'elseif(IOS)' in line:
+        skip_until_endif = True
+        continue
+    if skip_until_endif:
+        if 'endif()' in line:
+            skip_until_endif = False
+        continue
+    new_lines.append(line)
+
+lines = new_lines
+
+# Step 2: Find the else() that comes after elseif(ANDROID)
+insert_idx = -1
+android_idx = -1
+
+for i, line in enumerate(lines):
+    if 'elseif(ANDROID)' in line:
+        android_idx = i
+        break
+
+if android_idx == -1:
+    print("ERROR: Could not find elseif(ANDROID) block")
     exit(1)
 
-ios_block = """elseif(IOS)
-\t# iOS: Build dependencies from source (same as Android)
-\tadd_subdirectory(3rdparty/zlib EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/zstd EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/lz4 EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/libwebp EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/SDL3 EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/harfbuzz EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/freetype EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/oboe EXCLUDE_FROM_ALL)
-\tadd_subdirectory(3rdparty/plutosvg1 EXCLUDE_FROM_ALL)
-\t# iOS: ZLIB available as -lz in SDK (use system zlib instead of building)
-\t# We'll create the target after add_subdirectory at the end of this file
-\tmessage(STATUS "iOS: Added 3rdparty add_subdirectory calls")
+# Find the next else() after elseif(ANDROID)
+for i in range(android_idx + 1, len(lines)):
+    if lines[i].strip() == 'else()':
+        insert_idx = i
+        break
 
-"""
+if insert_idx == -1:
+    print("ERROR: Could not find else() after elseif(ANDROID)")
+    exit(1)
 
-content = content[:android_block_end] + ios_block + content[android_block_end:]
+# Step 3: Insert elseif(IOS) block before else()
+ios_block = [
+    'elseif(IOS)\n',
+    '\t# iOS: Build dependencies from source (same as Android)\n',
+    '\tadd_subdirectory(3rdparty/zlib EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/zstd EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/lz4 EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/libwebp EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/SDL3 EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/harfbuzz EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/freetype EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/oboe EXCLUDE_FROM_ALL)\n',
+    '\tadd_subdirectory(3rdparty/plutosvg1 EXCLUDE_FROM_ALL)\n',
+    '\tmessage(STATUS "iOS: Added 3rdparty add_subdirectory calls")\n',
+    '\n',
+]
 
-# Step 2: Append ALIAS target creation at the END of the file (after all add_subdirectory calls)
-ios_alias_block = """
+lines = lines[:insert_idx] + ios_block + lines[insert_idx:]
+
+# Step 4: Append ALIAS targets at the END of file
+ios_alias_block = '''
 # iOS: Create namespaced ALIAS targets AFTER all add_subdirectory calls have executed
 if(IOS)
-  # ZLIB::ZLIB - use -lz from iOS SDK (zlib not built from source for iOS)
+  # ZLIB::ZLIB - use -lz from iOS SDK
   if(NOT TARGET ZLIB::ZLIB)
     add_library(ios_zlib INTERFACE)
     target_link_libraries(ios_zlib INTERFACE "-lz")
@@ -58,7 +91,7 @@ if(IOS)
     message(STATUS "iOS: Created Zstd::Zstd ALIAS")
   endif()
 
-  # CURL::libcurl - stub for iOS (not available)
+  # CURL::libcurl - stub for iOS
   if(NOT TARGET CURL::libcurl)
     add_library(ios_curl INTERFACE)
     add_library(CURL::libcurl ALIAS ios_curl)
@@ -73,11 +106,11 @@ if(IOS)
     message(STATUS "iOS: Created SDL3::SDL3 ALIAS")
   endif()
 endif()
-"""
+'''
 
-content += ios_alias_block
+lines.append(ios_alias_block)
 
 with open(filepath, 'w') as f:
-    f.write(content)
+    f.writelines(lines)
 
 print("Patch: Added elseif(IOS) block and ALIAS targets to SearchForStuff.cmake")
