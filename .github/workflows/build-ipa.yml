@@ -264,6 +264,10 @@ jobs:
           echo "  -framework UIKit \\" >> /tmp/link.sh
           echo "  -framework Security \\" >> /tmp/link.sh
           echo "  -framework CFNetwork \\" >> /tmp/link.sh
+          echo "  -framework CoreGraphics \\" >> /tmp/link.sh
+          echo "  -framework CoreText \\" >> /tmp/link.sh"
+          echo "  -framework CoreVideo \\" >> /tmp/link.sh"
+          echo "  -framework CoreBluetooth \\" >> /tmp/link.sh"
           echo "  -lz -lbz2 -liconv -lc++ \\" >> /tmp/link.sh
           echo "  output/Payload/BionicSX2.app/main.o \\" >> /tmp/link.sh
           echo "  $LIBS \\" >> /tmp/link.sh
