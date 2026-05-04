@@ -127,6 +127,20 @@ if(IOS)
     add_library(CURL::libcurl ALIAS ios_curl)
     message(STATUS "iOS: Created CURL::libcurl stub ALIAS")
   endif()
+
+  # PNG::PNG - stub for iOS (libpng not available)
+  if(NOT TARGET PNG::PNG)
+    add_library(ios_png INTERFACE)
+    add_library(PNG::PNG ALIAS ios_png)
+    message(STATUS "iOS: Created PNG::PNG stub ALIAS")
+  endif()
+
+  # PCAP::PCAP - stub for iOS
+  if(NOT TARGET PCAP::PCAP)
+    add_library(ios_pcap INTERFACE)
+    add_library(PCAP::PCAP ALIAS ios_pcap)
+    message(STATUS "iOS: Created PCAP::PCAP stub ALIAS")
+  endif()
 endif()
 
 add_subdirectory(3rdparty/fast_float EXCLUDE_FROM_ALL)
