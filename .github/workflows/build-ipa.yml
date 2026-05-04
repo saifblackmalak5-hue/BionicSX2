@@ -241,49 +241,47 @@ jobs:
             -c ios/BionicSX2/main.m \
             -o output/Payload/BionicSX2.app/main.o
 
-          # Create linker command with -all_load to force all libraries to be loaded
-          LIBS=$(cat /tmp/libs.txt | tr '\n' ' ')
+          # Build linker response file (@file) to avoid command-line length issues
+          # The @file syntax tells clang++ to read args from the file (one per line)
+          echo "-arch arm64"                          > /tmp/linker_args.txt
+          echo "-isysroot $SDK"                     >> /tmp/linker_args.txt
+          echo "-miphoneos-version-min=16.0"   >> /tmp/linker_args.txt
+          echo "-stdlib=libc++"                    >> /tmp/linker_args.txt
+          echo "-all_load"                         >> /tmp/linker_args.txt
+          echo "-framework Metal"                   >> /tmp/linker_args.txt
+          echo "-framework MetalKit"                >> /tmp/linker_args.txt
+          echo "-framework AudioToolbox"            >> /tmp/linker_args.txt
+          echo "-framework AVFoundation"            >> /tmp/linker_args.txt
+          echo "-framework CoreAudio"               >> /tmp/linker_args.txt
+          echo "-framework CoreHaptics"             >> /tmp/linker_args.txt
+          echo "-framework CoreMotion"              >> /tmp/linker_args.txt
+          echo "-framework Foundation"               >> /tmp/linker_args.txt
+          echo "-framework GameController"           >> /tmp/linker_args.txt
+          echo "-framework QuartzCore"               >> /tmp/linker_args.txt
+          echo "-framework UIKit"                   >> /tmp/linker_args.txt
+          echo "-framework Security"                 >> /tmp/linker_args.txt
+          echo "-framework CFNetwork"                >> /tmp/linker_args.txt
+          echo "-framework CoreGraphics"             >> /tmp/linker_args.txt
+          echo "-framework CoreText"                 >> /tmp/linker_args.txt
+          echo "-framework CoreVideo"                >> /tmp/linker_args.txt
+          echo "-framework CoreBluetooth"            >> /tmp/linker_args.txt
+          echo "-lz"                                >> /tmp/linker_args.txt
+          echo "-lbz2"                              >> /tmp/linker_args.txt
+          echo "-liconv"                            >> /tmp/linker_args.txt
+          echo "-lc++"                              >> /tmp/linker_args.txt
+          echo "output/Payload/BionicSX2.app/main.o" >> /tmp/linker_args.txt
+          cat /tmp/libs.txt                    >> /tmp/linker_args.txt
+          echo "-o output/Payload/BionicSX2.app/BionicSX2" >> /tmp/linker_args.txt
 
-          # Write linker command to a script for better debugging
-          echo '#!/bin/bash' > /tmp/link.sh
-          echo "clang++ -arch arm64 \\" >> /tmp/link.sh
-          echo "  -isysroot $SDK \\" >> /tmp/link.sh
-          echo "  -miphoneos-version-min=16.0 \\" >> /tmp/link.sh
-          echo "  -stdlib=libc++ \\" >> /tmp/link.sh
-          echo "  -all_load \\" >> /tmp/link.sh
-          echo "  -framework Metal \\" >> /tmp/link.sh
-          echo "  -framework MetalKit \\" >> /tmp/link.sh
-          echo "  -framework AudioToolbox \\" >> /tmp/link.sh
-          echo "  -framework AVFoundation \\" >> /tmp/link.sh
-          echo "  -framework CoreAudio \\" >> /tmp/link.sh
-          echo "  -framework CoreHaptics \\" >> /tmp/link.sh
-          echo "  -framework CoreMotion \\" >> /tmp/link.sh
-          echo "  -framework Foundation \\" >> /tmp/link.sh
-          echo "  -framework GameController \\" >> /tmp/link.sh
-          echo "  -framework QuartzCore \\" >> /tmp/link.sh
-          echo "  -framework UIKit \\" >> /tmp/link.sh
-          echo "  -framework Security \\" >> /tmp/link.sh
-          echo "  -framework CFNetwork \\" >> /tmp/link.sh
-          echo "  -framework CoreGraphics \\" >> /tmp/link.sh
-          echo "  -framework CoreText \\" >> /tmp/link.sh"
-          echo "  -framework CoreVideo \\" >> /tmp/link.sh"
-          echo "  -framework CoreBluetooth \\" >> /tmp/link.sh"
-          echo "  -lz -lbz2 -liconv -lc++ \\" >> /tmp/link.sh
-          echo "  output/Payload/BionicSX2.app/main.o \\" >> /tmp/link.sh
-          echo "  $LIBS \\" >> /tmp/link.sh
-          echo "  -o output/Payload/BionicSX2.app/BionicSX2" >> /tmp/link.sh
+          echo "=== Linker args file ==="
+          cat /tmp/linker_args.txt
 
-          echo "=== Linker script contents ==="
-          cat /tmp/link.sh
+          # Link using response file
+          clang++ @/tmp/linker_args.txt 2>/tmp/linker_error.txt || true
 
-          chmod +x /tmp/link.sh
-          /tmp/link.sh 2>/tmp/linker_error.txt || true
-
-          # Show linker errors
           echo "=== Linker Errors ==="
           cat /tmp/linker_error.txt
 
-          # Check if executable was created
           if [ ! -f output/Payload/BionicSX2.app/BionicSX2 ]; then
             echo "ERROR: Executable was not created!"
             exit 1
@@ -292,14 +290,9 @@ jobs:
           echo "=== Executable size after linking ==="
           ls -la output/Payload/BionicSX2.app/BionicSX2
 
-          if [ $(stat -f%z output/Payload/BionicSX2.app/BionicSX2) -lt 1000000 ]; then
-            echo "WARNING: Executable is smaller than expected (<1MB)"
-            echo "Checking if LIBS was empty..."
-            if [ -z "$LIBS" ]; then
-              echo "ERROR: LIBS variable is empty!"
-            else
-              echo "LIBS has content: $(echo $LIBS | wc -w) items"
-            fi
+          SIZE=$(stat -f%z output/Payload/BionicSX2.app/BionicSX2)
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "WARNING: Executable is smaller than expected (<1MB) — size: $SIZE bytes"
           fi
 
           # Copy essential files
