@@ -50,14 +50,26 @@ jobs:
           cat /tmp/inject.txt $FILE > /tmp/merged.txt
           mv /tmp/merged.txt $FILE
 
-      - name: Patch 5 - Fix plutosvg
+      - name: Patch 5 - Fix iOS dependencies (CURL, etc.)
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
+          # Comment out CURL for iOS - skip external search
+          sed -i '' 's/find_package(CURL REQUIRED)/# find_package(CURL REQUIRED)  # iOS: disabled/g' $FILE
+          echo "Patch 5 done"
+
+      - name: Patch 6 - Add iOS target definitions to SearchForStuff.cmake
+        run: |
+          python3 ios-patch-targets.py
+          echo "Patch 6 done"
+
+      - name: Patch 7 - Fix plutosvg
         run: |
           cp ios/stubs/discordpp.h src/armsx2/app/src/main/cpp/3rdparty/discord-rpc/include/discordpp.h
           cp ios/stubs/discord_rpc.h src/armsx2/app/src/main/cpp/3rdparty/discord-rpc/include/discord_rpc.h
           bash ios/stubs/discord_rpc_all_stub.sh
           sed -i '' 's/plutosvg::plutosvg/plutosvg/g' src/armsx2/app/src/main/cpp/3rdparty/imgui/CMakeLists.txt
 
-      - name: Patch 6 - iOS stubs for macOS files
+      - name: Patch 8 - iOS stubs for macOS files
         run: |
           BASE="src/armsx2/app/src/main/cpp"
           printf '// iOS stub\n' > $BASE/3rdparty/cubeb/src/cubeb_osx_run_loop.cpp
@@ -65,7 +77,7 @@ jobs:
           printf '// iOS stub\n#include "CocoaTools.h"\n' > $BASE/common/CocoaTools.mm
           printf '// iOS stub\n#include "DarwinMisc.h"\nvoid MemProtect(void*, size_t, const char*) {}\n' > $BASE/common/Darwin/DarwinMisc.cpp
 
-      - name: Patch 7 - Fix Discord and AppKit
+      - name: Patch 9 - Fix Discord and AppKit
         run: |
           BASE="src/armsx2/app/src/main/cpp"
           echo '#include "../3rdparty/discord-rpc/include/discord_rpc.h"' > /tmp/discord_prepend.txt
@@ -74,7 +86,7 @@ jobs:
           sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ BionicSX2: AppKit disabled for iOS/g' $BASE/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
           echo "Patch 7 done"
 
-      - name: Patch 8 - Fix Metal macOS-only APIs
+      - name: Patch 10 - Fix Metal macOS-only APIs
         run: |
           BASE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal"
           cp ios/stubs/GSMTLDeviceInfo.mm src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSMTLDeviceInfo.mm
@@ -82,7 +94,7 @@ jobs:
           sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ AppKit disabled for iOS/g' src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
           echo "Patch 8 done"
 
-      - name: Patch 9 - Fix deployment target
+      - name: Patch 11 - Fix deployment target
         run: |
           find src/armsx2 -name "CMakeLists.txt" | xargs grep -l "miphoneos-version-min" | while read f; do
             sed -i '' 's/-miphoneos-version-min=[0-9.]*/-miphoneos-version-min=16.0/g' "$f"
@@ -93,7 +105,7 @@ jobs:
           sed -i '' 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)/set(CMAKE_OSX_DEPLOYMENT_TARGET 16.0)/g' src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake
           echo "Patch 9 done"
 
-      - name: Patch 10 - Fix GSDeviceMTL macOS APIs
+      - name: Patch 12 - Fix GSDeviceMTL macOS APIs
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm"
           sed -i '' '/m_layer setDisplaySyncEnabled/d' $FILE
@@ -122,6 +134,7 @@ jobs:
         run: |
           cmake -B build \
             -G Ninja \
+            -C $(pwd)/ios-fix-targets.cmake \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
@@ -133,14 +146,14 @@ jobs:
             -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source" \
             -S src/armsx2/app/src/main/cpp
 
-      - name: Patch 11 - Fix xmm0.Q() in recVTLB
+      - name: Patch 13 - Fix xmm0.Q() in recVTLB
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/ix86-32/recVTLB.cpp"
           sed -i '' 's/armAsm->Ldr(xmm0\.Q()/armAsm->Ldr(a64::QRegister(0).Q()/g' $FILE
           sed -i '' 's/armAsm->Str(armQRegister(1)\.Q()/armAsm->Str(a64::QRegister(1).Q()/g' $FILE
           echo "Patch 11 done"
 
-      - name: Patch 12 - Fix recVTLB and microVU alignment
+      - name: Patch 14 - Fix recVTLB and microVU alignment
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/ix86-32/recVTLB.cpp"
           sed -i '' 's/armAsm->Mov(a64::QRegister(reg), xmm0)/armAsm->Mov(a64::QRegister(reg).Q(), a64::QRegister(0).Q())/g' $FILE
@@ -151,7 +164,7 @@ jobs:
           sed -i '' 's/alignas(64) vuRegistersPack/alignas(128) vuRegistersPack/g' $FILE3
           echo "Patch 12 done"
 
-      - name: Patch 13 - Fix GetCode to GetId
+      - name: Patch 15 - Fix GetCode to GetId
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/ix86-32/recVTLB.cpp"
           sed -i '' 's/xmm0\.GetCode()/xmm0.GetId()/g' $FILE
@@ -161,7 +174,7 @@ jobs:
           sed -i '' 's/xmmPQ\.GetId()/xmmPQ.GetCode()/g' $FILE2
           echo "Patch 13 done"
 
-      - name: Patch 14 - Fix xmm2 Ldr in microVU_Execute
+      - name: Patch 16 - Fix xmm2 Ldr in microVU_Execute
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/microVU_Execute.inl"
           sed -i '' 's/armAsm->Ldr(xmm2,/armAsm->Ldr(a64::QRegister(2).Q(),/g' $FILE
@@ -178,7 +191,7 @@ jobs:
           sed -i '' 's/armAsm->Ldr(xmm3,/armAsm->Ldr(a64::QRegister(3).Q(),/g' $FILE
           echo "Patch 14 done"
 
-      - name: Patch 15 - Fix xmm VRegister methods in microVU_Execute
+      - name: Patch 17 - Fix xmm VRegister methods in microVU_Execute
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/x86/microVU_Execute.inl"
           sed -i '' 's/xmm0\.V16B()/a64::QRegister(0).V16B()/g' $FILE
@@ -190,7 +203,7 @@ jobs:
           sed -i '' 's/armMOVMSKPS(EAX, xmm0)/armMOVMSKPS(EAX, a64::QRegister(0))/g' $FILE
           echo "Patch 15 done"
 
-      - name: Patch 16 - Fix DEV9 network headers for iOS
+      - name: Patch 18 - Fix DEV9 network headers for iOS
         run: |
           FILE="src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp"
           sed -i '' 's/#include <net\/route.h>/\/\/ iOS: net\/route.h disabled/g' $FILE
@@ -205,7 +218,7 @@ jobs:
           printf "// BionicSX2 iOS stub\n#include \"AudioStream.h\"\n" > $BASE/pcsx2/Host/OboeAudioStream.cpp
           echo "Patch 16 done"
 
-      - name: Patch 17 - Fix CDVD DriveUtility IOKit
+      - name: Patch 19 - Fix CDVD DriveUtility IOKit
         run: |
           BASE="src/armsx2/app/src/main/cpp"
           printf '// BionicSX2 iOS stub\n' > $BASE/pcsx2/CDVD/Darwin/DriveUtility.cpp
