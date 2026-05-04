@@ -244,35 +244,36 @@ jobs:
           # Create linker command with -all_load to force all libraries to be loaded
           LIBS=$(cat /tmp/libs.txt | tr '\n' ' ')
 
-          # Link executable using static libraries only (no macOS dylibs)
-          # Use -all_load to force all code from static libraries to be included
-          clang++ -arch arm64 \
-            -isysroot $SDK \
-            -miphoneos-version-min=16.0 \
-            -stdlib=libc++ \
-            -all_load \
-            \
-            -framework Metal \
-            -framework MetalKit \
-            -framework AudioToolbox \
-            -framework AVFoundation \
-            -framework CoreAudio \
-            -framework CoreHaptics \
-            -framework CoreMotion \
-            -framework Foundation \
-            -framework GameController \
-            -framework QuartzCore \
-            -framework UIKit \
-            -framework Security \
-            -framework CFNetwork \
-            \
-            -lz -lbz2 -liconv -lc++ \
-            \
-            output/Payload/BionicSX2.app/main.o \
-            $LIBS \
-            \
-            -o output/Payload/BionicSX2.app/BionicSX2 \
-            2>/tmp/linker_error.txt || true
+          # Write linker command to a script for better debugging
+          echo '#!/bin/bash' > /tmp/link.sh
+          echo "clang++ -arch arm64 \\" >> /tmp/link.sh
+          echo "  -isysroot $SDK \\" >> /tmp/link.sh
+          echo "  -miphoneos-version-min=16.0 \\" >> /tmp/link.sh
+          echo "  -stdlib=libc++ \\" >> /tmp/link.sh
+          echo "  -all_load \\" >> /tmp/link.sh
+          echo "  -framework Metal \\" >> /tmp/link.sh
+          echo "  -framework MetalKit \\" >> /tmp/link.sh
+          echo "  -framework AudioToolbox \\" >> /tmp/link.sh
+          echo "  -framework AVFoundation \\" >> /tmp/link.sh
+          echo "  -framework CoreAudio \\" >> /tmp/link.sh
+          echo "  -framework CoreHaptics \\" >> /tmp/link.sh
+          echo "  -framework CoreMotion \\" >> /tmp/link.sh
+          echo "  -framework Foundation \\" >> /tmp/link.sh
+          echo "  -framework GameController \\" >> /tmp/link.sh
+          echo "  -framework QuartzCore \\" >> /tmp/link.sh
+          echo "  -framework UIKit \\" >> /tmp/link.sh
+          echo "  -framework Security \\" >> /tmp/link.sh
+          echo "  -framework CFNetwork \\" >> /tmp/link.sh
+          echo "  -lz -lbz2 -liconv -lc++ \\" >> /tmp/link.sh
+          echo "  output/Payload/BionicSX2.app/main.o \\" >> /tmp/link.sh
+          echo "  $LIBS \\" >> /tmp/link.sh
+          echo "  -o output/Payload/BionicSX2.app/BionicSX2" >> /tmp/link.sh
+
+          echo "=== Linker script contents ==="
+          cat /tmp/link.sh
+
+          chmod +x /tmp/link.sh
+          /tmp/link.sh 2>/tmp/linker_error.txt || true
 
           # Show linker errors
           echo "=== Linker Errors ==="
