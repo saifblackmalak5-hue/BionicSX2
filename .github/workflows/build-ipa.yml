@@ -126,53 +126,51 @@ jobs:
           cd libpng-1.6.40
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           # Create pnglibconf.h manually (minimal config for iOS)
-          cat > pnglibconf.h << 'PNGCONF'
-#ifndef PNG_LIBPNG_CONF_H
-#define PNG_LIBPNG_CONF_H
-/* Settings for libpng 1.6.40 */
-#define PNG_16BIT_SUPPORTED
-#define PNG_ALIGNED_MEMORY_SUPPORTED
-#define PNG_BENIGN_WARNINGS_SUPPORTED
-#define PNG_BGND_SUPPORTED
-#define PNG_CHECK_cRC_SUPPORTED
-#define PNG_COLORSPACE_SUPPORTED
-#define PNG_CONVERT_tIME_SUPPORTED
-#define PNG_EASY_ACCESS_SUPPORTED
-#define PNG_ERROR_TEXT_SUPPORTED
-#define PNG_FIXED_POINT_SUPPORTED
-#define PNG_FLOATING_ARITHMETIC_SUPPORTED
-#define PNG_FLOOR_t_SUPPORTED
-#define PNG_gAMA_SUPPORTED
-#define PNG_GET_cHRM_SUPPORTED
-#define PNG_GET_tIME_SUPPORTED
-#define PNG_HANDLE_AS_UNHANDLED
-#define PNG_INCHR_SUPPORTED
-#define PNG_INFO_IMAGE_SUPPORTED
-#define PNG_IO_STATE_SUPPORTED
-#define PNG_MNG_FEATURES_SUPPORTED
-#define PNG_pHYs_SUPPORTED
-#define PNG_POINTER_INDEXING_SUPPORTED
-#define PNG_READ_SUPPORTED
-#define PNG_SAVE_tIME_SUPPORTED
-#define PNG_sBIT_SUPPORTED
-#define PNG_sCAL_SUPPORTED
-#define PNG_SEQUENTIAL_READ_SUPPORTED
-#define PNG_SET_CHUNK_CACHE_MAX_SUPPORTED
-#define PNG_SET_CHUNK_MALLOC_MAX_SUPPORTED
-#define PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
-#define PNG_sKIP_SUPPORTED
-#define PNG_sPLT_SUPPORTED
-#define PNG_STDIO_SUPPORTED
-#define PNG_tEXt_SUPPORTED
-#define PNG_tIME_SUPPORTED
-#define PNG_tRNS_SUPPORTED
-#define PNG_USER_CHUNK_CACHE_SUPPORTED
-#define PNG_USER_CHUNK_MALLOC_MAX_SUPPORTED
-#define PNG_WARNINGS_SUPPORTED
-#define PNG_WRITE_SUPPORTED
-#define PNG_zTXt_SUPPORTED
-#endif
-PNGCONF
+          printf '#ifndef PNG_LIBPNG_CONF_H\n' > pnglibconf.h
+          printf '#define PNG_LIBPNG_CONF_H\n' >> pnglibconf.h
+          printf '/* Settings for libpng 1.6.40 */\n' >> pnglibconf.h
+          printf '#define PNG_16BIT_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_ALIGNED_MEMORY_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_BENIGN_WARNINGS_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_BGND_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_CHECK_cRC_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_COLORSPACE_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_CONVERT_tIME_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_EASY_ACCESS_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_ERROR_TEXT_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_FIXED_POINT_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_FLOATING_ARITHMETIC_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_FLOOR_t_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_gAMA_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_GET_cHRM_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_GET_tIME_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_HANDLE_AS_UNHANDLED\n' >> pnglibconf.h
+          printf '#define PNG_INCHR_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_INFO_IMAGE_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_IO_STATE_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_MNG_FEATURES_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_pHYs_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_POINTER_INDEXING_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_READ_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_SAVE_tIME_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_sBIT_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_sCAL_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_SEQUENTIAL_READ_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_SET_CHUNK_CACHE_MAX_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_SET_CHUNK_MALLOC_MAX_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_SET_UNKNOWN_CHUNKS_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_sKIP_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_sPLT_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_STDIO_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_tEXt_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_tIME_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_tRNS_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_USER_CHUNK_CACHE_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_USER_CHUNK_MALLOC_MAX_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_WARNINGS_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_WRITE_SUPPORTED\n' >> pnglibconf.h
+          printf '#define PNG_zTXt_SUPPORTED\n' >> pnglibconf.h
+          printf '#endif\n' >> pnglibconf.h
           # Compile all .c files for iOS
           for f in *.c; do
             [ -f "$f" ] || continue
