@@ -233,50 +233,46 @@ jobs:
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
           # Compile iOS entry point (Objective-C main.m)
-          clang -arch arm64 \
-            -isysroot $SDK \
-            -miphoneos-version-min=16.0 \
-            -framework Foundation \
-            -framework UIKit \
-            -c ios/BionicSX2/main.m \
-            -o output/Payload/BionicSX2.app/main.o
+          clang -arch arm64             -isysroot $SDK             -miphoneos-version-min=16.0             -x objective-c             -fobjc-arc             -c ios/BionicSX2/main.m             -o output/Payload/BionicSX2.app/main.o
 
-          # Build linker response file (@file) to avoid command-line length issues
-          # The @file syntax tells clang++ to read args from the file (one per line)
-          echo "-arch arm64"                          > /tmp/linker_args.txt
-          echo "-isysroot $SDK"                     >> /tmp/linker_args.txt
-          echo "-miphoneos-version-min=16.0"   >> /tmp/linker_args.txt
-          echo "-stdlib=libc++"                    >> /tmp/linker_args.txt
-          echo "-all_load"                         >> /tmp/linker_args.txt
-          echo "-framework Metal"                   >> /tmp/linker_args.txt
-          echo "-framework MetalKit"                >> /tmp/linker_args.txt
-          echo "-framework AudioToolbox"            >> /tmp/linker_args.txt
-          echo "-framework AVFoundation"            >> /tmp/linker_args.txt
-          echo "-framework CoreAudio"               >> /tmp/linker_args.txt
-          echo "-framework CoreHaptics"             >> /tmp/linker_args.txt
-          echo "-framework CoreMotion"              >> /tmp/linker_args.txt
-          echo "-framework Foundation"               >> /tmp/linker_args.txt
-          echo "-framework GameController"           >> /tmp/linker_args.txt
-          echo "-framework QuartzCore"               >> /tmp/linker_args.txt
-          echo "-framework UIKit"                   >> /tmp/linker_args.txt
-          echo "-framework Security"                 >> /tmp/linker_args.txt
-          echo "-framework CFNetwork"                >> /tmp/linker_args.txt
-          echo "-framework CoreGraphics"             >> /tmp/linker_args.txt
-          echo "-framework CoreText"                 >> /tmp/linker_args.txt
-          echo "-framework CoreVideo"                >> /tmp/linker_args.txt
-          echo "-framework CoreBluetooth"            >> /tmp/linker_args.txt
-          echo "-lz"                                >> /tmp/linker_args.txt
-          echo "-lbz2"                              >> /tmp/linker_args.txt
-          echo "-liconv"                            >> /tmp/linker_args.txt
-          echo "-lc++"                              >> /tmp/linker_args.txt
-          echo "output/Payload/BionicSX2.app/main.o" >> /tmp/linker_args.txt
-          cat /tmp/libs.txt                    >> /tmp/linker_args.txt
-          echo "-o output/Payload/BionicSX2.app/BionicSX2" >> /tmp/linker_args.txt
+          # Build linker response file (@file) - one argument per line
+          {
+            echo "-arch arm64"
+            echo "-isysroot $SDK"
+            echo "-miphoneos-version-min=16.0"
+            echo "-stdlib=libc++"
+            echo "-all_load"
+            echo "-framework Metal"
+            echo "-framework MetalKit"
+            echo "-framework AudioToolbox"
+            echo "-framework AVFoundation"
+            echo "-framework CoreAudio"
+            echo "-framework CoreHaptics"
+            echo "-framework CoreMotion"
+            echo "-framework Foundation"
+            echo "-framework GameController"
+            echo "-framework QuartzCore"
+            echo "-framework UIKit"
+            echo "-framework Security"
+            echo "-framework CFNetwork"
+            echo "-framework CoreGraphics"
+            echo "-framework CoreText"
+            echo "-framework CoreVideo"
+            echo "-framework CoreBluetooth"
+            echo "-lz"
+            echo "-lpng"
+            echo "-lbz2"
+            echo "-liconv"
+            echo "-lc++"
+            echo "output/Payload/BionicSX2.app/main.o"
+            cat /tmp/libs.txt
+            echo "-o output/Payload/BionicSX2.app/BionicSX2"
+          } > /tmp/linker_args.txt
 
-          echo "=== Linker args file ==="
-          cat /tmp/linker_args.txt
+          echo "=== Linker args file (first 20 lines) ==="
+          head -40 /tmp/linker_args.txt
 
-          # Link using response file
+          # Link using response file (@file syntax)
           clang++ @/tmp/linker_args.txt 2>/tmp/linker_error.txt || true
 
           echo "=== Linker Errors ==="
@@ -301,7 +297,6 @@ jobs:
           # Package IPA
           cd output && zip -r BionicSX2.ipa Payload/
           echo "IPA size: $(du -sh BionicSX2.ipa)"
-
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
