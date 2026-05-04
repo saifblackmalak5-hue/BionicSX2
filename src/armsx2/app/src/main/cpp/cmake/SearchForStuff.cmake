@@ -106,6 +106,11 @@ set(CMAKE_FIND_FRAMEWORK ${FIND_FRAMEWORK_BACKUP})
 
 # iOS: Create ALIAS targets for libraries that don't create them automatically
 if(IOS)
+  # Fix CMAKE_OBJC_COMPILE_OBJECT for iOS cross-compilation
+  if(NOT DEFINED CMAKE_OBJC_COMPILE_OBJECT)
+    set(CMAKE_OBJC_COMPILE_OBJECT "<CMAKE_OBJC_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+    message(STATUS "iOS: Set CMAKE_OBJC_COMPILE_OBJECT manually")
+  endif()
   # ZLIB::ZLIB - use -lz from iOS SDK (3rdparty/zlib not built for iOS)
   if(NOT TARGET ZLIB::ZLIB)
     add_library(ios_zlib INTERFACE)
