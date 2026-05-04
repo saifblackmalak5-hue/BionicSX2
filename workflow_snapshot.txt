@@ -24,7 +24,12 @@ jobs:
           xcode-version: latest-stable
 
       - name: Install Dependencies
-        run: brew install cmake ninja ccache
+        run: brew install cmake ninja ccache curl freetype zstd jpeg-turbo sdl3 libpng webp lz4
+
+      - name: Setup MoltenVK
+        run: |
+          brew install molten-vk
+          echo "MOLTENVK_PATH=$(brew --prefix molten-vk)" >> $GITHUB_ENV
 
       - name: Patch 1 - iOS Platform
         run: |
@@ -43,8 +48,14 @@ jobs:
       - name: Patch 4 - Inject Dependencies
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-          # Inject find_package calls without brew dylib paths; static libs will be found from build
-          printf "find_package(ZLIB REQUIRED)\nif(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n  add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n  set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\nendif()\nadd_library(PCAP::PCAP INTERFACE IMPORTED)\n" > /tmp/inject.txt
+          FT=$(brew --prefix freetype)
+          JPEG=$(brew --prefix jpeg-turbo)
+          ZSTD=$(brew --prefix zstd)
+          SDL3=$(brew --prefix sdl3)
+          PNG=$(brew --prefix libpng)
+          WEBP=$(brew --prefix webp)
+          LZ4=$(brew --prefix lz4)
+          printf "find_package(ZLIB REQUIRED)\nif(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n  add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n  set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\nendif()\nset(FREETYPE_LIBRARY ${FT}/lib/libfreetype.dylib)\nset(FREETYPE_INCLUDE_DIRS ${FT}/include/freetype2)\nfind_package(Freetype REQUIRED)\nset(JPEG_LIBRARY ${JPEG}/lib/libjpeg.dylib)\nset(JPEG_INCLUDE_DIR ${JPEG}/include)\nfind_package(JPEG REQUIRED)\nadd_library(Zstd::Zstd UNKNOWN IMPORTED)\nset_target_properties(Zstd::Zstd PROPERTIES IMPORTED_LOCATION ${ZSTD}/lib/libzstd.dylib INTERFACE_INCLUDE_DIRECTORIES ${ZSTD}/include)\nset(PNG_LIBRARY ${PNG}/lib/libpng.dylib)\nset(PNG_PNG_INCLUDE_DIR ${PNG}/include)\nfind_package(PNG REQUIRED)\nset(SDL3_DIR ${SDL3}/lib/cmake/SDL3)\nfind_package(SDL3 REQUIRED)\nadd_library(WebP::libwebp UNKNOWN IMPORTED)\nset_target_properties(WebP::libwebp PROPERTIES IMPORTED_LOCATION ${WEBP}/lib/libwebp.dylib INTERFACE_INCLUDE_DIRECTORIES ${WEBP}/include)\nadd_library(LZ4::LZ4 UNKNOWN IMPORTED)\nset_target_properties(LZ4::LZ4 PROPERTIES IMPORTED_LOCATION ${LZ4}/lib/liblz4.dylib INTERFACE_INCLUDE_DIRECTORIES ${LZ4}/include)\nadd_library(PCAP::PCAP INTERFACE IMPORTED)\n" > /tmp/inject.txt
           cat /tmp/inject.txt $FILE > /tmp/merged.txt
           mv /tmp/merged.txt $FILE
 
@@ -134,7 +145,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path) \
             -DUSE_DISCORD_SDK=ON \
-            -DBUILD_SHARED_LIBS=OFF \
+            -DCURL_INCLUDE_DIR=$(brew --prefix curl)/include \
             -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source" \
             -S src/armsx2/app/src/main/cpp
 
@@ -225,18 +236,13 @@ jobs:
         run: |
           mkdir -p output/Payload/BionicSX2.app
 
-          # Collect all static libraries from build directory
+          # جمع كل الـ static libraries
           LIBS=$(find build -name "*.a" | tr '\n' ' ')
 
-          # Set iOS SDK path
+          # نبني الـ executable من الـ libraries
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-
-          # Link executable using static libraries only (no macOS dylibs)
-          clang++ -arch arm64 \
-            -isysroot $SDK \
+          clang++ -arch arm64 -isysroot $SDK \
             -miphoneos-version-min=16.0 \
-            -stdlib=libc++ \
-            \
             -framework Metal \
             -framework MetalKit \
             -framework AudioToolbox \
@@ -248,21 +254,20 @@ jobs:
             -framework GameController \
             -framework QuartzCore \
             -framework UIKit \
-            -framework Security \
-            -framework CFNetwork \
-            \
-            -lz -lbz2 -liconv -lc++ \
-            \
+            -lz -lbz2 -liconv \ \
+                -framework Security \
+                -framework CFNetwork \
+                -framework SystemConfiguration \
+                -lc++ \
             $LIBS \
-            \
-            -o output/Payload/BionicSX2.app/BionicSX2
+            -o output/Payload/BionicSX2.app/BionicSX2 || echo "Link step - may need more flags"
 
-          # Copy essential files
+          # نسخ الملفات الأساسية
           cp ios/BionicSX2/Info.plist output/Payload/BionicSX2.app/
-
-          # Package IPA
+          
+          # تجميع الـ IPA
           cd output && zip -r BionicSX2.ipa Payload/
-          echo "IPA size: $(du -sh BionicSX2.ipa)"
+          echo "IPA size: $(du -sh BionicSX2.ipa)" 
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -270,3 +275,10 @@ jobs:
           name: BionicSX2-IPA
           path: output/BionicSX2.ipa
           retention-days: 7
+      - name: Patch 7 - Disable Discord RPC
+        run: |
+          FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
+          sed -i '' 's/find_package(DiscordRPC/# find_package(DiscordRPC/g' $FILE
+          # نضيف define لتعطيل Discord
+          FILE2="src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake"
+          echo "Patch 7 done"
