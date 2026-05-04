@@ -275,6 +275,13 @@ jobs:
             -c ios/BionicSX2/main.m \
             -o output/Payload/BionicSX2.app/main.o
 
+          # Compile iOS stubs for missing platform functions
+          clang++ -arch arm64 \
+            -isysroot $SDK \
+            -miphoneos-version-min=16.0 \
+            -c ios/stubs/ios_stubs.cpp \
+            -o output/Payload/BionicSX2.app/ios_stubs.o
+
           # Build linker response file (@file) - one argument per line
           # Order matters for static linking: object files, then libraries
           {
@@ -285,10 +292,12 @@ jobs:
             echo "-all_load"
             echo "-L/tmp/ios-libs/lib"
             echo "output/Payload/BionicSX2.app/main.o"
+            echo "output/Payload/BionicSX2.app/ios_stubs.o"
             echo "/tmp/ios-libs/lib/libpng.a"
             cat /tmp/libs.txt
             echo "-framework Metal"
             echo "-framework MetalKit"
+            echo "-framework OpenGLES"
             echo "-framework AudioToolbox"
             echo "-framework AVFoundation"
             echo "-framework CoreAudio"
