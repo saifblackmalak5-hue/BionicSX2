@@ -224,7 +224,8 @@ jobs:
             exit 1
           fi
 
-          LIBS=$(cat /tmp/libs.txt | tr '\n' ' ')
+          # Use -force_load for each static library to include all code
+          LIBS=$(cat /tmp/libs.txt | sed 's/^/-force_load /' | tr '\n' ' ')
 
           # Set iOS SDK path
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
