@@ -68,6 +68,8 @@ jobs:
           cat /tmp/discord_prepend.txt $BASE/pcsx2/VMManager.cpp > /tmp/vm_new.cpp
           mv /tmp/vm_new.cpp $BASE/pcsx2/VMManager.cpp
           sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ BionicSX2: AppKit disabled for iOS/g' $BASE/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
+          # Fix discord-rpc CMakeLists.txt - remove discord_register_osx.m for iOS
+          sed -i '' 's|src/discord_register_osx.m||g' $BASE/3rdparty/discord-rpc/CMakeLists.txt
           echo "Patch 7 done"
 
       - name: Patch 8 - Fix Metal macOS-only APIs
