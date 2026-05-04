@@ -43,8 +43,10 @@ jobs:
       - name: Patch 4 - Inject Dependencies
         run: |
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-          # Inject find_package calls without brew dylib paths; static libs will be found from build
-          printf "find_package(ZLIB REQUIRED)\nif(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n  add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n  set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\nendif()\nadd_library(PCAP::PCAP INTERFACE IMPORTED)\n" > /tmp/inject.txt
+          # Comment out CURL for iOS - skip external search
+          sed -i '' 's/find_package(CURL REQUIRED)/# find_package(CURL REQUIRED)  # iOS: disabled/g' $FILE
+          # Inject ZLIB handling - optional for iOS since -lz is available
+          printf "if(NOT IOS)\n  find_package(ZLIB REQUIRED)\n  if(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n    add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n    set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\n  endif()\nelse()\n  # iOS: ZLIB available as -lz in system\nendif()\nadd_library(PCAP::PCAP INTERFACE IMPORTED)\n" > /tmp/inject.txt
           cat /tmp/inject.txt $FILE > /tmp/merged.txt
           mv /tmp/merged.txt $FILE
 
@@ -66,25 +68,18 @@ jobs:
       - name: Patch 7 - Fix Discord and AppKit
         run: |
           BASE="src/armsx2/app/src/main/cpp"
-          # نضيف discord_rpc.h في أول VMManager.cpp مباشرة
           echo '#include "../3rdparty/discord-rpc/include/discord_rpc.h"' > /tmp/discord_prepend.txt
           cat /tmp/discord_prepend.txt $BASE/pcsx2/VMManager.cpp > /tmp/vm_new.cpp
           mv /tmp/vm_new.cpp $BASE/pcsx2/VMManager.cpp
-          # نصلح AppKit في GSDeviceMTL.h
           sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ BionicSX2: AppKit disabled for iOS/g' $BASE/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
           echo "Patch 7 done"
 
       - name: Patch 8 - Fix Metal macOS-only APIs
         run: |
           BASE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal"
-          # رفع الـ deployment target لـ iOS 16 لحل MTLSharedEvent
-          # نستبدل macOS-only Metal feature sets
-                    # نحذف NSView من GSDeviceMTL.h
           cp ios/stubs/GSMTLDeviceInfo.mm src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSMTLDeviceInfo.mm
-          sed -i '' 's/MRCOwned<NSView\*> m_view;//g' $BASE/GSDeviceMTL.h
-          sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ AppKit disabled for iOS/g' $BASE/GSDeviceMTL.h
-          # نرفع deployment target
-          sed -i '' 's/-miphoneos-version-min=11.0/-miphoneos-version-min=16.0/g' build/build.ninja 2>/dev/null || true
+          sed -i '' 's/MRCOwned<NSView\*> m_view;//g' src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
+          sed -i '' 's/#include <AppKit\/AppKit.h>/\/\/ AppKit disabled for iOS/g' src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.h
           echo "Patch 8 done"
 
       - name: Patch 9 - Fix deployment target
@@ -116,7 +111,7 @@ jobs:
           sed -i '' '/MTLCopyAllDevices/d' $FILE
           sed -i '' '/for (id<MTLDevice> dev in devs/d' $FILE
           sed -i '' '/m_dev = GSMTLDevice(MRCRetain(dev))/d' $FILE
-          sed -i '' '/if (\[\[dev name\]/d' $FILE
+          sed -i '' '/if ([[dev name]/d' $FILE
           sed -i '' '/ai.name = \[\[dev name\]/d' $FILE
           sed -i '' '/for (id<MTLDevice> dev in/d' $FILE
           sed -i '' '/features.max_texsize = 16384/d' $FILE
@@ -200,7 +195,6 @@ jobs:
           FILE="src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp"
           sed -i '' 's/#include <net\/route.h>/\/\/ iOS: net\/route.h disabled/g' $FILE
           sed -i '' 's/#include <net\/if_dl.h>/\/\/ iOS: net\/if_dl.h disabled/g' $FILE
-          # Replace entire file with stub
           cp ios/stubs/AdapterUtils.cpp src/armsx2/app/src/main/cpp/pcsx2/DEV9/AdapterUtils.cpp
           find src/armsx2/app/src/main/cpp/pcsx2/DEV9 -name "*.cpp" -o -name "*.h" | xargs grep -l "net/route.h\|net/if_dl.h" | xargs sed -i '' 's/#include <net\/route.h>/\/\/ iOS disabled/g;s/#include <net\/if_dl.h>/\/\/ iOS disabled/g'
           mkdir -p src/armsx2/app/src/main/cpp/3rdparty/oboe/include/oboe
