@@ -27,6 +27,7 @@ GSDevice* MakeGSDeviceMTL()
 }
 
 std::vector<GSAdapterInfo> GetMetalAdapterList()
+#if !TARGET_OS_IOS
 { @autoreleasepool {
 	std::vector<GSAdapterInfo> list;
 	auto devs = MRCTransfer(MTLCopyAllDevices());
@@ -45,6 +46,20 @@ std::vector<GSAdapterInfo> GetMetalAdapterList()
 		ai.max_upscale_multiplier = GSGetMaxUpscaleMultiplier(ai.max_texture_size);
 		list.push_back(std::move(ai));
 	}
+#endif
+#if TARGET_OS_IOS
+// iOS: just return the default device
+id<MTLDevice> dev = MTLCreateSystemDefaultDevice();
+if (dev)
+{
+	GSAdapterInfo ai;
+	ai.name = [[dev name] UTF8String];
+	ai.max_texture_size = 16384;
+	ai.max_upscale_multiplier = GSGetMaxUpscaleMultiplier(ai.max_texture_size);
+	list.push_back(std::move(ai));
+	[dev release];
+}
+#endif
 	return list;
 }}
 
