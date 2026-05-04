@@ -45,21 +45,8 @@ jobs:
           FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
           # Step 1: Comment out CURL for iOS
           sed -i '' 's/find_package(CURL REQUIRED)/# find_package(CURL REQUIRED)  # iOS: disabled/g' $FILE
-          # Step 2: Inject ZLIB handling at the beginning
-          printf "if(NOT IOS)
-  find_package(ZLIB REQUIRED)
-  if(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)
-    add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
-    set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")
-  endif()
-else()
-  # iOS: ZLIB available as -lz in system
-endif()
-add_library(PCAP::PCAP INTERFACE IMPORTED)
-" > /tmp/inject.txt
-          cat /tmp/inject.txt $FILE > /tmp/merged.txt
-          mv /tmp/merged.txt $FILE
-          echo "Patch 4 done"
+          # Step 2: Inject ZLIB handling via Python (avoids YAML issues)
+          python3 ios-inject-zlib.py
           echo "Patch 4 done"
 
       - name: Patch 5 - Fix plutosvg
