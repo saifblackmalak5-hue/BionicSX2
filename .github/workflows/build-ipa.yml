@@ -15,8 +15,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -40,13 +38,9 @@ jobs:
         run: |
           sed -i '' 's/find_package(PCAP/# find_package(PCAP/g' src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake
 
-      - name: Patch 4 - Inject Dependencies and Add iOS elseif block
+      - name: Patch 4 - Disable CURL for iOS
         run: |
-          FILE="src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-          # Step 1: Comment out CURL for iOS
-          sed -i '' 's/find_package(CURL REQUIRED)/# find_package(CURL REQUIRED)  # iOS: disabled/g' $FILE
-          # Step 2: Inject ZLIB handling via Python (avoids YAML issues)
-          python3 ios-inject-zlib.py
+          sed -i '' 's/find_package(CURL REQUIRED)/# find_package(CURL REQUIRED)  # iOS: disabled/g' src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake
           echo "Patch 4 done"
 
       - name: Patch 5 - Fix plutosvg
@@ -117,11 +111,6 @@ jobs:
           sed -i '' '/if (\[dev supports/d' $FILE
           echo "Patch 10 done"
 
-    
-      - name: Patch 11 - Append iOS ALIAS targets to SearchForStuff.cmake
-        run: |
-          python3 ios-append-alias.py
-          echo "Patch 11 done"
 
       - name: Configure CMake for iOS
         run: |
