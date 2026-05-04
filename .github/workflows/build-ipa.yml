@@ -86,30 +86,20 @@ jobs:
           sed -i '' 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)/set(CMAKE_OSX_DEPLOYMENT_TARGET 16.0)/g' src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake
           echo "Patch 9 done"
 
-      - name: Patch 10 - Fix GSDeviceMTL macOS APIs
+      - name: Patch 10 - Disable Metal renderer for iOS
         run: |
-          FILE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm"
-          sed -i '' '/m_layer setDisplaySyncEnabled/d' $FILE
-          sed -i '' '/NSWorkspace/d' $FILE
-          sed -i '' '/m_view = MRCRetain/d' $FILE
-          sed -i '' '/m_view setLayer/d' $FILE
-          sed -i '' '/m_view = nullptr/d' $FILE
-          sed -i '' '/m_view setWantsLayer/d' $FILE
-          sed -i '' '/MTLBarrierScopeRenderTargets/d' $FILE
-          sed -i '' '/memoryBarrierWithScope/d' $FILE
-          sed -i '' '/beforeStages:MTLRenderStageFragment/d' $FILE
-          sed -i '' '/afterStages:MTLRenderStageFragment/d' $FILE
-          sed -i '' '/inFileViewerRootedAtPath/d' $FILE
-          sed -i '' '/MTLFeatureSet_macOS/d' $FILE
-          sed -i '' '/MTLCopyAllDevices/d' $FILE
-          sed -i '' '/for (id<MTLDevice> dev in devs/d' $FILE
-          sed -i '' '/m_dev = GSMTLDevice(MRCRetain(dev))/d' $FILE
-          sed -i '' '/if ([[dev name]/d' $FILE
-          sed -i '' '/ai.name = \[\[dev name\]/d' $FILE
-          sed -i '' '/for (id<MTLDevice> dev in/d' $FILE
-          sed -i '' '/features.max_texsize = 16384/d' $FILE
-          sed -i '' '/if (\[dev supports/d' $FILE
-          echo "Patch 10 done"
+          # Comment out GSDeviceMTL.mm for iOS in CMakeLists.txt
+          sed -i '' 's|src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm|# src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          # Comment out Metal shaders for iOS
+          sed -i '' 's|GS/Renderers/Metal/cas.metal|# GS/Renderers/Metal/cas.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/convert.metal|# GS/Renderers/Metal/convert.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/present.metal|# GS/Renderers/Metal/present.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/merge.metal|# GS/Renderers/Metal/merge.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/misc.metal|# GS/Renderers/Metal/misc.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/interlace.metal|# GS/Renderers/Metal/interlace.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/tfx.metal|# GS/Renderers/Metal/tfx.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|GS/Renderers/Metal/fxaa.metal|# GS/Renderers/Metal/fxaa.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          echo "Patch 10 done - Metal renderer disabled for iOS"
 
 
       - name: Patch 11 - Fix libwebp install and freetype CMake version
