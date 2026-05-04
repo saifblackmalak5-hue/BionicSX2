@@ -232,6 +232,10 @@ jobs:
           # Use -force_load for each static library to include all code
           LIBS=$(cat /tmp/libs.txt | sed 's/^/-force_load /' | tr '\n' ' ')
 
+          # Debug: show what LIBS contains
+          echo "LIBS contents (first 500 chars): $(echo $LIBS | cut -c1-500)"
+          echo "Number of -force_load entries: $(echo $LIBS | grep -o force_load | wc -l)"
+
           # Set iOS SDK path
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 
