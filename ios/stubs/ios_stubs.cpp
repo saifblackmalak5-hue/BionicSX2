@@ -62,7 +62,7 @@ namespace CocoaTools {
     std::string GetResourcePath() { return ""; }
     void* CreateMetalLayer(void* wi) { return nullptr; }
     void DestroyMetalLayer(void* wi) {}
-    float GetViewRefreshRate(const void& wi) { return 60.0f; }
+    float GetViewRefreshRate(const void* wi) { return 60.0f; }
     std::string GetNonTranslocatedBundlePath() { return ""; }
 }
 
@@ -110,8 +110,7 @@ public:
     void FlushEncodersForReadback() {}
     void* GetLateTextureUploadEncoder() { return nullptr; }
     void* GetRenderCmdBufWithoutCreate() { return nullptr; }
-    void Allocate(void*, unsigned long) {}
-    void Allocate(void*, unsigned long) {}
+    void Allocate(void* ptr, unsigned long size) {}
 };
 
 // InputManager stubs
