@@ -123,8 +123,12 @@ jobs:
           mkdir -p ios-libs
           curl -LO https://download.sourceforge.net/libpng/libpng16/1.6.40/libpng-1.6.40.tar.gz
           tar xzf libpng-1.6.40.tar.gz
+          # Fix CMake minimum version for compatibility with modern CMake
+          cd libpng-1.6.40
+          sed -i '' 's/cmake_minimum_required(VERSION 2.8.3)/cmake_minimum_required(VERSION 3.5)/g' CMakeLists.txt
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           # Configure libpng for iOS using CMake
+          cd /tmp
           mkdir libpng-build && cd libpng-build
           cmake ../libpng-1.6.40 \
             -G "Unix Makefiles" \
