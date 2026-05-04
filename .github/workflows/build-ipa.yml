@@ -217,17 +217,14 @@ jobs:
           tar xzf libpng-1.6.40.tar.gz
           cd libpng-1.6.40
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          ./configure --host=arm-apple-darwin --disable-shared --enable-static CC="clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0" || true
-          make -j$(sysctl -n hw.logicalcpu) || true
-          # If make fails, try building manually
-          if [ ! -f .libs/libpng16.a ]; then
-            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0 -c *.c
-            ar rcs /tmp/libpng.a *.o
-          else
-            cp .libs/libpng16.a /tmp/libpng.a
-          fi
+          # Compile all .c files for iOS arm64
+          for f in *.c; do
+            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0 -I. -c $f -o $(basename $f .c).o
+          done
+          # Create static library
+          ar rcs /tmp/libpng.a *.o
           ls -la /tmp/libpng.a
-          echo "libpng built successfully"
+          echo "libpng.a built successfully"
 
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
@@ -279,7 +276,6 @@ jobs:
             echo "-framework CoreVideo"
             echo "-framework CoreBluetooth"
             echo "-lz"
-            echo "-lpng"
             echo "-lbz2"
             echo "-liconv"
             echo "-lc++"
