@@ -122,10 +122,12 @@ jobs:
           cd /tmp
           rm -rf libpng-1.6.40 ios-libs
           mkdir -p ios-libs/lib ios-libs/include/libpng16
-          # Try multiple mirrors for reliability
-          curl -LO https://github.com/glennrp/libpng/releases/download/v1.6.40/libpng-1.6.40.tar.gz || \
-          curl -LO https://download.sourceforge.net/libpng/libpng16/1.6.40/libpng-1.6.40.tar.gz
-          tar xzf libpng-1.6.40.tar.gz
+          # Download from PNG official distribution
+          curl -L -o libpng.tar.gz https://sourceforge.net/projects/libpng/files/libpng16/1.6.40/libpng-1.6.40.tar.gz/download
+          # Verify download
+          file libpng.tar.gz
+          tar xzf libpng.tar.gz
+          ls -la libpng-1.6.40/
           cd libpng-1.6.40
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           # Generate pnglibconf.h using the script from libpng source
