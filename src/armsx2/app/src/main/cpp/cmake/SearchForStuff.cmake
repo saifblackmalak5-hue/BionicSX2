@@ -104,9 +104,9 @@ endif()
 
 set(CMAKE_FIND_FRAMEWORK ${FIND_FRAMEWORK_BACKUP})
 
-# iOS: Create ALIAS targets immediately after 3rdparty add_subdirectory calls
+# iOS: Create ALIAS targets for libraries that don't create them automatically
 if(IOS)
-  # ZLIB::ZLIB - use -lz from iOS SDK
+  # ZLIB::ZLIB - use -lz from iOS SDK (3rdparty/zlib not built for iOS)
   if(NOT TARGET ZLIB::ZLIB)
     add_library(ios_zlib INTERFACE)
     target_link_libraries(ios_zlib INTERFACE "-lz")
@@ -114,28 +114,11 @@ if(IOS)
     message(STATUS "iOS: Created ZLIB::ZLIB ALIAS to ios_zlib")
   endif()
 
-  # Zstd::Zstd - built from 3rdparty/zstd
-  if(TARGET zstd AND NOT TARGET Zstd::Zstd)
-    add_library(ios_zstd INTERFACE)
-    target_link_libraries(ios_zstd INTERFACE zstd)
-    add_library(Zstd::Zstd ALIAS ios_zstd)
-    message(STATUS "iOS: Created Zstd::Zstd ALIAS")
-  endif()
-
-  # Freetype::Freetype - built from 3rdparty/freetype
-  if(TARGET freetype AND NOT TARGET Freetype::Freetype)
-    add_library(ios_freetype INTERFACE)
-    target_link_libraries(ios_freetype INTERFACE freetype)
-    add_library(Freetype::Freetype ALIAS ios_freetype)
-    message(STATUS "iOS: Created Freetype::Freetype ALIAS")
-  endif()
-
-  # SDL3::SDL3 - built from 3rdparty/SDL3
-  if(TARGET SDL3 AND NOT TARGET SDL3::SDL3)
-    add_library(ios_sdl3 INTERFACE)
-    target_link_libraries(ios_sdl3 INTERFACE SDL3)
-    add_library(SDL3::SDL3 ALIAS ios_sdl3)
-    message(STATUS "iOS: Created SDL3::SDL3 ALIAS")
+  # JPEG::JPEG - stub for iOS (libjpeg not available)
+  if(NOT TARGET JPEG::JPEG)
+    add_library(ios_jpeg INTERFACE)
+    add_library(JPEG::JPEG ALIAS ios_jpeg)
+    message(STATUS "iOS: Created JPEG::JPEG stub ALIAS")
   endif()
 
   # CURL::libcurl - stub for iOS
@@ -143,13 +126,6 @@ if(IOS)
     add_library(ios_curl INTERFACE)
     add_library(CURL::libcurl ALIAS ios_curl)
     message(STATUS "iOS: Created CURL::libcurl stub ALIAS")
-  endif()
-
-  # JPEG::JPEG - stub for iOS (libjpeg not available)
-  if(NOT TARGET JPEG::JPEG)
-    add_library(ios_jpeg INTERFACE)
-    add_library(JPEG::JPEG ALIAS ios_jpeg)
-    message(STATUS "iOS: Created JPEG::JPEG stub ALIAS")
   endif()
 endif()
 
