@@ -213,7 +213,18 @@ jobs:
           mkdir -p output/Payload/BionicSX2.app
 
           # Collect all static libraries from build directory
-          LIBS=$(find build -name "*.a" | tr '\n' ' ')
+          echo "=== Checking for .a files in build directory ==="
+          find build -name "*.a" | tee /tmp/libs.txt
+          LIB_COUNT=$(find build -name "*.a" | wc -l)
+          echo "Found $LIB_COUNT static libraries"
+          if [ "$LIB_COUNT" -eq 0 ]; then
+            echo "ERROR: No static libraries found in build directory!"
+            echo "Build directory contents:"
+            find build -type f | head -50
+            exit 1
+          fi
+
+          LIBS=$(cat /tmp/libs.txt | tr '\n' ' ')
 
           # Set iOS SDK path
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
@@ -253,6 +264,19 @@ jobs:
             $LIBS \
             \
             -o output/Payload/BionicSX2.app/BionicSX2
+
+          echo "=== Executable size after linking ==="
+          ls -la output/Payload/BionicSX2.app/BionicSX2
+
+          if [ $(stat -f%z output/Payload/BionicSX2.app/BionicSX2) -lt 1000000 ]; then
+            echo "WARNING: Executable is smaller than expected (<1MB)"
+            echo "Checking if LIBS was empty..."
+            if [ -z "$LIBS" ]; then
+              echo "ERROR: LIBS variable is empty!"
+            else
+              echo "LIBS has content: $(echo $LIBS | wc -w) items"
+            fi
+          fi
 
           # Copy essential files
           cp ios/BionicSX2/Info.plist output/Payload/BionicSX2.app/
