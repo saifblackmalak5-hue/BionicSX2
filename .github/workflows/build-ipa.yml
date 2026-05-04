@@ -164,9 +164,10 @@ jobs:
             -DUSE_DISCORD_SDK=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source" \
+            -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source -D__aarch64__=1" \
             -DCMAKE_PREFIX_PATH="/tmp/ios-libs" \
             -DCMAKE_FIND_ROOT_PATH="/tmp/ios-libs" \
+            -DM_ARM64=TRUE \
             -S src/armsx2/app/src/main/cpp
 
       - name: Patch 12 - Fix xmm0.Q() in recVTLB
@@ -247,6 +248,15 @@ jobs:
           printf '// BionicSX2 iOS stub\n' > $BASE/pcsx2/CDVD/Darwin/DriveUtility.cpp
           printf "// BionicSX2 iOS stub\n" > $BASE/pcsx2/CDVD/Darwin/IOCtlSrc.cpp
           echo "Patch 18 done"
+
+      - name: Patch 19 - Exclude x86 code for iOS
+        run: |
+          # Prevent x86-specific code from being compiled for iOS/ARM64
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt"
+          # Add iOS guard around x86 sources inclusion (line 1080)
+          sed -i '' 's/#if(_M_X86)/#if(_M_X86)\n#ifndef __TARGET_OS_IOS/' $FILE
+          sed -i '' 's/#endif()/#endif()\n#endif()/' $FILE
+          echo "Patch 19 done - added iOS guard for x86 code"
 
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
