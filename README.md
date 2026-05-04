@@ -16,3 +16,4 @@ built on top of ARMSX2 and PCSX2 with Apple Silicon optimization.
 
 ## License
 GPL-3.0
+# Trigger workflow run
