@@ -5,37 +5,26 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <mach/mach.h>
-#include <mach/mach_host.h>
-#include <sys/sysctl.h>
+#include <ctime>
 
-// CPU tick count for timing
+// CPU tick count for timing - stub returns time in milliseconds
 extern "C" uint64_t GetCPUTicks() {
-    return mach_absolute_time();
+    return (uint64_t)std::time(nullptr) * 1000ULL;
 }
 
-// Tick frequency for timing calculations
+// Tick frequency for timing calculations (milliseconds)
 extern "C" uint64_t GetTickFrequency() {
-    mach_timebase_info_data_t timebase;
-    mach_timebase_info(&timebase);
-    return 1000000000ULL * timebase.denom / timebase.numer;
+    return 1000ULL;
 }
 
-// Total physical memory
+// Total physical memory - stub returns 8GB for iPad M4
 extern "C" uint64_t GetPhysicalMemory() {
-    int mib[2] = {CTL_HW, HW_MEMSIZE};
-    uint64_t memsize = 0;
-    size_t len = sizeof(memsize);
-    sysctl(mib, 2, &memsize, &len, NULL, 0);
-    return memsize;
+    return 8ULL * 1024 * 1024 * 1024;
 }
 
-// Available physical memory
+// Available physical memory - stub
 extern "C" uint64_t GetAvailablePhysicalMemory() {
-    vm_statistics_data_t vm_stats;
-    mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
-    host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&vm_stats, &count);
-    return vm_stats.free_count * PAGE_SIZE;
+    return 4ULL * 1024 * 1024 * 1024;
 }
 
 // OS version string
