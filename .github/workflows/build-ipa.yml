@@ -57,6 +57,9 @@ jobs:
           printf '// iOS stub\n' > $BASE/3rdparty/cubeb/src/cubeb_audiounit.cpp
           printf '// iOS stub\n#include "CocoaTools.h"\n' > $BASE/common/CocoaTools.mm
           printf '// iOS stub\n#include "DarwinMisc.h"\nvoid MemProtect(void*, size_t, const char*) {}\n' > $BASE/common/Darwin/DarwinMisc.cpp
+          # Stub out discord-rpc macOS files
+          printf '// iOS stub\n' > $BASE/3rdparty/discord-rpc/src/discord_register_osx.m
+          printf '// iOS stub\n' > $BASE/3rdparty/discord-rpc/src/discord_register_osx.mm
 
       - name: Patch 7 - Fix Discord and AppKit
         run: |
