@@ -115,7 +115,7 @@ jobs:
       - name: Patch 11 - Fix libwebp install and freetype CMake version
         run: |
           # Fix libwebp install errors for iOS - comment out install commands
-          sed -i '' 's/^install(TARGETS/## install(TARGETS/g' src/armsx2/app/src/main/cpp/3rdparty/libwebp/CMakeLists.txt
+          python3 ios-fix-libwebp.py
           # Fix freetype CMake version issue
           sed -i '' 's/cmake_minimum_required(VERSION 2.8.12)/cmake_minimum_required(VERSION 3.5)/g' src/armsx2/app/src/main/cpp/3rdparty/freetype/CMakeLists.txt
           echo "Patch 11 done"
