@@ -665,7 +665,6 @@ if(USE_VULKAN)
 	target_include_directories(PCSX2_FLAGS INTERFACE ${SHADERC_INCLUDE_DIR})
 endif()
 
-if(NOT IOS)
 set(pcsx2GSMetalShaders
 	GS/Renderers/Metal/cas.metal
 	GS/Renderers/Metal/convert.metal
@@ -675,7 +674,6 @@ set(pcsx2GSMetalShaders
 	GS/Renderers/Metal/interlace.metal
 	GS/Renderers/Metal/tfx.metal
 	GS/Renderers/Metal/fxaa.metal
-endif()
 )
 
 if(WIN32)
@@ -872,12 +870,8 @@ set(pcsx2InputHeaders
 )
 
 if(APPLE)
-	if(NOT IOS)
-		list(APPEND pcsx2GSSources
-			GS/Renderers/Metal/GSDeviceMTL.mm
-		)
-	endif()
 	list(APPEND pcsx2GSSources
+		GS/Renderers/Metal/GSDeviceMTL.mm
 		GS/Renderers/Metal/GSMTLDeviceInfo.mm
 		GS/Renderers/Metal/GSTextureMTL.mm
 	)

@@ -86,12 +86,30 @@ jobs:
           sed -i '' 's/set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)/set(CMAKE_OSX_DEPLOYMENT_TARGET 16.0)/g' src/armsx2/app/src/main/cpp/cmake/BuildParameters.cmake
           echo "Patch 9 done"
 
-      - name: Patch 10 - Fix GSDeviceMTL macOS APIs (DISABLED)
+      - name: Patch 10 - Fix GSDeviceMTL macOS APIs
         run: |
-          echo "Patch 10 disabled - using proper iOS guards instead"
-          # FILE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm"
-          # sed commands disabled - using proper iOS guards in source files
-          echo "Patch 10 done (disabled)"
+          FILE="src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm"
+          sed -i '' '/m_layer setDisplaySyncEnabled/d' $FILE
+          sed -i '' '/NSWorkspace/d' $FILE
+          sed -i '' '/m_view = MRCRetain/d' $FILE
+          sed -i '' '/m_view setLayer/d' $FILE
+          sed -i '' '/m_view = nullptr/d' $FILE
+          sed -i '' '/m_view setWantsLayer/d' $FILE
+          sed -i '' '/MTLBarrierScopeRenderTargets/d' $FILE
+          sed -i '' '/memoryBarrierWithScope/d' $FILE
+          sed -i '' '/beforeStages:MTLRenderStageFragment/d' $FILE
+          sed -i '' '/afterStages:MTLRenderStageFragment/d' $FILE
+          sed -i '' '/inFileViewerRootedAtPath/d' $FILE
+          sed -i '' '/MTLFeatureSet_macOS/d' $FILE
+          sed -i '' '/MTLCopyAllDevices/d' $FILE
+          sed -i '' '/for (id<MTLDevice> dev in devs/d' $FILE
+          sed -i '' '/m_dev = GSMTLDevice(MRCRetain(dev))/d' $FILE
+          sed -i '' '/if ([[dev name]/d' $FILE
+          sed -i '' '/ai.name = \[\[dev name\]/d' $FILE
+          sed -i '' '/for (id<MTLDevice> dev in/d' $FILE
+          sed -i '' '/features.max_texsize = 16384/d' $FILE
+          sed -i '' '/if (\[dev supports/d' $FILE
+          echo "Patch 10 done"
 
 
       - name: Patch 11 - Fix libwebp install and freetype CMake version
