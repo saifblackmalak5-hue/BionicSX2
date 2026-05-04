@@ -126,15 +126,17 @@ jobs:
           cd libpng-1.6.40
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           # Generate pnglibconf.h using the script from libpng source
-          # First, create a minimal pnglibconf.h for iOS
           cp scripts/pnglibconf.h.prebuilt pnglibconf.h
+          # Create dummy fp.h to avoid missing header error on iOS
+          # fp.h is a macOS-only header for floating-point utils
+          printf '#ifndef FP_H\n#define FP_H\n#include <math.h>\n#endif\n' > fp.h
           # Now compile all .c files for iOS
           for f in *.c; do
             [ -f "$f" ] || continue
             base=$(basename "$f" .c)
             clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0 \
               -I. -I./scripts -I./ios-libs/include/libpng16 \
-              -DPNG_ARM_NEON_OPT=0 \
+              -DPNG_ARM_NEON_OPT=0 -DPNG_NO_FP \
               -c "$f" -o "${base}.o"
           done
           # Create static library
