@@ -141,6 +141,14 @@ if(IOS)
     add_library(PCAP::PCAP ALIAS ios_pcap)
     message(STATUS "iOS: Created PCAP::PCAP stub ALIAS")
   endif()
+
+  # WebP::libwebp - built from 3rdparty/libwebp
+  if(TARGET webp AND NOT TARGET WebP::libwebp)
+    add_library(ios_webp INTERFACE)
+    target_link_libraries(ios_webp INTERFACE webp)
+    add_library(WebP::libwebp ALIAS ios_webp)
+    message(STATUS "iOS: Created WebP::libwebp ALIAS")
+  endif()
 endif()
 
 add_subdirectory(3rdparty/fast_float EXCLUDE_FROM_ALL)
