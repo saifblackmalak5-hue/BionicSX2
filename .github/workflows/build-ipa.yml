@@ -124,13 +124,13 @@ jobs:
           tar xzf libpng-1.6.40.tar.gz
           cd libpng-1.6.40
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          # Create pnglibconf.h (minimal config for iOS)
+          # Copy pre-built config header
           cp scripts/pnglibconf.h.prebuilt pnglibconf.h
-          # Compile all .c files
+          # Compile all .c files with iOS SDK and correct includes
           for f in *.c; do
             [ -f "$f" ] || continue
             base=$(basename "$f" .c)
-            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0               -I. -I./scripts               -c "$f" -o "${base}.o"
+            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0               -I. -I./scripts -I./scripts               -c "$f" -o "${base}.o"
           done
           # Create static library
           ar rcs /tmp/libpng.a *.o
