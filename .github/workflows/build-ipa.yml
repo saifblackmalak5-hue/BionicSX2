@@ -117,10 +117,13 @@ jobs:
 
       - name: Build libpng for iOS
         run: |
+          set -e
           # Download and build libpng for iOS arm64
           cd /tmp
           rm -rf libpng-1.6.40 ios-libs
           mkdir -p ios-libs/lib ios-libs/include/libpng16
+          # Try multiple mirrors for reliability
+          curl -LO https://github.com/glennrp/libpng/releases/download/v1.6.40/libpng-1.6.40.tar.gz || \
           curl -LO https://download.sourceforge.net/libpng/libpng16/1.6.40/libpng-1.6.40.tar.gz
           tar xzf libpng-1.6.40.tar.gz
           cd libpng-1.6.40
