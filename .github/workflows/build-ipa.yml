@@ -46,53 +46,21 @@ jobs:
           # Step 1: Comment out CURL for iOS
           sed -i '' 's/find_package(CURL REQUIRED)/# find_package(CURL REQUIRED)  # iOS: disabled/g' $FILE
           # Step 2: Inject ZLIB handling at the beginning
-          printf "if(NOT IOS)\n  find_package(ZLIB REQUIRED)\n  if(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)\n    add_library(ZLIB::ZLIB UNKNOWN IMPORTED)\n    set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")\n  endif()\nelse()\n  # iOS: ZLIB available as -lz in system\nendif()\nadd_library(PCAP::PCAP INTERFACE IMPORTED)\n" > /tmp/inject.txt
+          printf "if(NOT IOS)
+  find_package(ZLIB REQUIRED)
+  if(ZLIB_FOUND AND NOT TARGET ZLIB::ZLIB)
+    add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
+    set_target_properties(ZLIB::ZLIB PROPERTIES IMPORTED_LOCATION \"\${ZLIB_LIBRARIES}\" INTERFACE_INCLUDE_DIRECTORIES \"\${ZLIB_INCLUDE_DIRS}\")
+  endif()
+else()
+  # iOS: ZLIB available as -lz in system
+endif()
+add_library(PCAP::PCAP INTERFACE IMPORTED)
+" > /tmp/inject.txt
           cat /tmp/inject.txt $FILE > /tmp/merged.txt
           mv /tmp/merged.txt $FILE
-          # Step 3: Add elseif(IOS) block before else() (after elseif(ANDROID))
-          # Use Python for reliable multiline insertion
-          python3 << 'PYEOF'
-          filepath = "src/armsx2/app/src/main/cpp/cmake/SearchForStuff.cmake"
-          with open(filepath, 'r') as f:
-              lines = f.readlines()
-          # Find elseif(ANDROID) line
-          android_idx = -1
-          for i, line in enumerate(lines):
-              if 'elseif(ANDROID)' in line:
-                  android_idx = i
-                  break
-          if android_idx == -1:
-              print("ERROR: elseif(ANDROID) not found")
-              exit(1)
-          # Find next else() after elseif(ANDROID)
-          insert_idx = -1
-          for i in range(android_idx + 1, len(lines)):
-              if lines[i].strip() == 'else()':
-                  insert_idx = i
-                  break
-          if insert_idx == -1:
-              print("ERROR: else() after elseif(ANDROID) not found")
-              exit(1)
-          # iOS block to insert
-          ios_block = [
-              'elseif(IOS)\n',
-              '\t# iOS: Build dependencies from source (same as Android)\n',
-              '\tadd_subdirectory(3rdparty/zlib EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/zstd EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/lz4 EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/libwebp EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/SDL3 EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/harfbuzz EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/freetype EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/oboe EXCLUDE_FROM_ALL)\n',
-              '\tadd_subdirectory(3rdparty/plutosvg1 EXCLUDE_FROM_ALL)\n',
-              '\tmessage(STATUS "iOS: Added 3rdparty add_subdirectory calls")\n',
-          ]
-          lines = lines[:insert_idx] + ios_block + lines[insert_idx:]
-          with open(filepath, 'w') as f:
-              f.writelines(lines)
-          print("Patch 4: Added elseif(IOS) block")
-          PYEOF
+          echo "Patch 4 done"
+          echo "Patch 4 done"
 
       - name: Patch 5 - Fix plutosvg
         run: |
@@ -162,12 +130,13 @@ jobs:
           sed -i '' '/if (\[dev supports/d' $FILE
           echo "Patch 10 done"
 
+    
       - name: Patch 11 - Append iOS ALIAS targets to SearchForStuff.cmake
         run: |
           python3 ios-append-alias.py
           echo "Patch 11 done"
 
-      - name: Configure CMake for iOS
+  - name: Configure CMake for iOS
         run: |
           cmake -B build \
             -G Ninja \
