@@ -89,16 +89,16 @@ jobs:
       - name: Patch 10 - Disable Metal renderer for iOS
         run: |
           # Comment out GSDeviceMTL.mm for iOS in CMakeLists.txt
-          sed -i '' 's|src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm|# src/armsx2/app/src/main/cpp/pcsx2/GS/Renderers/Metal/GSDeviceMTL.mm|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GSDeviceMTL.mm.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
           # Comment out Metal shaders for iOS
-          sed -i '' 's|GS/Renderers/Metal/cas.metal|# GS/Renderers/Metal/cas.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/convert.metal|# GS/Renderers/Metal/convert.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/present.metal|# GS/Renderers/Metal/present.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/merge.metal|# GS/Renderers/Metal/merge.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/misc.metal|# GS/Renderers/Metal/misc.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/interlace.metal|# GS/Renderers/Metal/interlace.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/tfx.metal|# GS/Renderers/Metal/tfx.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
-          sed -i '' 's|GS/Renderers/Metal/fxaa.metal|# GS/Renderers/Metal/fxaa.metal|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/cas.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/convert.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/present.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/merge.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/misc.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/interlace.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/tfx.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          sed -i '' 's|^.*GS/Renderers/Metal/fxaa.metal.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
           echo "Patch 10 done - Metal renderer disabled for iOS"
 
 
