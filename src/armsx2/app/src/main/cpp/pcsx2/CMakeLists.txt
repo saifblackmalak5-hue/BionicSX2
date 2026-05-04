@@ -493,7 +493,6 @@ endif()
 
 set(pcsx2GSSources
 	GS/GS.cpp
-	GS/GSCapture.cpp
 	GS/GSClut.cpp
 	GS/GSDrawingContext.cpp
 	GS/GSDump.cpp
