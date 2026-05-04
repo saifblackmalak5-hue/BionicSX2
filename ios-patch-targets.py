@@ -114,3 +114,4 @@ with open(filepath, 'w') as f:
     f.writelines(lines)
 
 print("Patch: Added elseif(IOS) block and ALIAS targets to SearchForStuff.cmake")
+# iOS targets fix - trigger rebuild
