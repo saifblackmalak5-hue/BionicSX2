@@ -22,7 +22,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Install Dependencies
-        run: brew install cmake ninja ccache
+        run: brew install cmake ninja ccache libpng
 
       - name: Patch 1 - iOS Platform
         run: |
@@ -209,6 +209,25 @@ jobs:
           printf '// BionicSX2 iOS stub\n' > $BASE/pcsx2/CDVD/Darwin/DriveUtility.cpp
           printf "// BionicSX2 iOS stub\n" > $BASE/pcsx2/CDVD/Darwin/IOCtlSrc.cpp
           echo "Patch 18 done"
+
+      - name: Build libpng for iOS
+        run: |
+          cd /tmp
+          curl -LO https://download.sourceforge.net/libpng/libpng16/1.6.40/libpng-1.6.40.tar.gz
+          tar xzf libpng-1.6.40.tar.gz
+          cd libpng-1.6.40
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          ./configure --host=arm-apple-darwin --disable-shared --enable-static CC="clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0" || true
+          make -j$(sysctl -n hw.logicalcpu) || true
+          # If make fails, try building manually
+          if [ ! -f .libs/libpng16.a ]; then
+            clang -arch arm64 -isysroot $SDK -miphoneos-version-min=16.0 -c *.c
+            ar rcs /tmp/libpng.a *.o
+          else
+            cp .libs/libpng16.a /tmp/libpng.a
+          fi
+          ls -la /tmp/libpng.a
+          echo "libpng built successfully"
 
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
