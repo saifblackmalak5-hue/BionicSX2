@@ -107,7 +107,7 @@ namespace Host {
 
     // From VMManager.h namespace Host
     void LoadSettings(SettingsInterface&, std::unique_lock<std::mutex>&) {}
-    void CheckForSettingsChanges(const Pcsx2Config&) {}
+    void CheckForSettingsChanges(const Pcsx2Config& old_config);
     void OnVMStarting() {}
     void OnVMStarted() {}
     void OnVMDestroyed() {}
@@ -138,7 +138,7 @@ namespace Host {
     std::optional<WindowInfo> GetTopLevelWindowInfo() { return std::nullopt; }
     void OnInputDeviceConnected(const std::string_view, const std::string_view) {}
     struct InputBindingKey {};
-    void OnInputDeviceDisconnected(InputBindingKey, std::string_view) {}
+    void OnInputDeviceDisconnected(const InputBindingKey key, const std::string_view identifier) {}
     void SetMouseMode(bool, bool) {}
 
     // From Achievements.h namespace Host
@@ -162,6 +162,9 @@ namespace Host {
         s32 GetTranslatedStringImpl(const std::string_view context, const std::string_view msg, char* tbuf, size_t tbuf_space) { return 0; }
     }
 } // namespace Host
+// Host::CheckForSettingsChanges out-of-line definition
+void Host::CheckForSettingsChanges(const Pcsx2Config& old_config) {}
+
 
 // CPU tick count for timing
 uint64_t GetCPUTicks() {
@@ -356,8 +359,15 @@ namespace Common {
 // HTTPDownloader stub
 class HTTPDownloader {
 public:
-    static void Create(std::string) { }
+    static std::unique_ptr<HTTPDownloader> Create(std::string user_agent = DEFAULT_USER_AGENT);
 };
+
+// Out-of-line definition
+std::unique_ptr<HTTPDownloader> HTTPDownloader::Create(std::string) { return nullptr; }
+
+// DEFAULT_USER_AGENT constant
+static const char DEFAULT_USER_AGENT[] = "BionicSX2/1.0";
+
 
 // GSVector2i, GSVector2T, and PageProtectionMode stubs
 template<typename T>
