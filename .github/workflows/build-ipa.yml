@@ -249,58 +249,6 @@ jobs:
           printf "// BionicSX2 iOS stub\n" > $BASE/pcsx2/CDVD/Darwin/IOCtlSrc.cpp
           echo "Patch 18 done"
 
-      - name: Patch 19 - Comment out x86 sources for iOS
-        run: |
-          FILE="src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt"
-          # The x86 code is being compiled for ARM64 because conditionals are broken
-          # (commented out with # prefix in CMakeLists.txt)
-          # Simple fix: comment out the list(APPEND ...) line that adds x86 to build
-
-          # Comment out the line that adds x86 sources to pcsx2LTOSources
-          sed -i '' '/^[[:space:]]*list(APPEND pcsx2LTOSources.*pcsx2x86Sources)/ s/^/#/' $FILE
-
-          # Also comment out the pcsx2x86Sources and pcsx2x86Headers variables
-          sed -i '' '/^[[:space:]]*set(pcsx2x86Sources/,/^[[:space:]]*)/ s/^/#/' $FILE
-          sed -i '' '/^[[:space:]]*set(pcsx2x86Headers/,/^[[:space:]]*)/ s/^/#/' $FILE
-
-          echo "Patch 19 done - x86 sources commented out for iOS"
-
-      - name: Patch 20 - Disable Metal renderer for iOS
-        run: |
-          FILE="src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt"
-          # Metal renderer if(APPLE) block at lines 872-886 adds Metal sources
-          # iOS doesn't use Metal the same way, and the .mm files won't compile
-          # Use awk to comment out the entire if(APPLE) block for Metal
-
-          # Find the line number of "if(APPLE)" that's followed by GSDeviceMTL
-          awk '/^if\(APPLE\)$/,/^endif\(\)$/ {
-            if (index($0, "if(APPLE)") > 0) { in_apple_block=1 }
-            if (in_apple_block && index($0, "GSDeviceMTL") > 0) {
-              in_metal_block=1
-            }
-            if (in_metal_block) {
-              print "#" $0
-              if (index($0, "endif()") > 0) { exit }
-              next
-            }
-            print $0
-          }' $FILE > ${FILE}.tmp && mv ${FILE}.tmp $FILE
-
-          echo "Patch 20 done - Metal renderer disabled for iOS"
-
-      - name: Patch 21 - Fix GetValidDrive signature
-        run: |
-          FILE="src/armsx2/app/src/main/cpp/pcsx2/CDVD/CDVDdiscReader.cpp"
-          # Fix GetValidDrive signature - it takes a non-const reference
-          # Our stub in ios_stubs.cpp now has the correct signature
-          echo "Patch 21 done - GetValidDrive signature handled in stubs"
-
-      - name: Patch 22 - Add iOS framework stubs
-        run: |
-          # Make sure we have all the necessary iOS stubs compiled
-          # The ios_stubs.cpp now has comprehensive stubs for all missing functions
-          echo "Patch 22 done - iOS stubs updated"
-
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
