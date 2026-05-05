@@ -12,17 +12,32 @@
 #include <mutex>
 #include <memory>
 
-// Include necessary PCSX2 headers for proper type definitions
-#include "common/Pcsx2Defs.h"
-#include "common/WindowInfo.h"
+// Forward declarations for PCSX2 types
+namespace Pcsx2 {
+    struct Config;
+}
+using Pcsx2Config = Pcsx2::Config;
 
-// Forward declarations for types we need
 struct SettingsInterface;
 struct ProgressCallback;
 struct Error;
 struct AudioStreamParameters;
 
-// Host namespace stubs - from Host.h
+// WindowInfo forward declaration
+struct WindowInfo {
+    enum class Type { Surfaceless, Win32, X11, Wayland, MacOS, Android };
+    Type type = Type::Surfaceless;
+    void* display_connection = nullptr;
+    void* window_handle = nullptr;
+    void* surface_handle = nullptr;
+    u32 surface_width = 0;
+    u32 surface_height = 0;
+    float surface_scale = 1.0f;
+    float surface_refresh_rate = 0.0f;
+    static std::optional<float> QueryRefreshRateForWindow(const WindowInfo& wi) { return std::nullopt; }
+};
+
+// Host namespace stubs
 namespace Host {
     const char* TranslateToCString(const std::string_view, const std::string_view) { return ""; }
     std::string_view TranslateToStringView(const std::string_view, const std::string_view) { return ""; }
@@ -45,7 +60,7 @@ namespace Host {
     void OpenURL(const std::string_view) {}
     bool CopyTextToClipboard(const std::string_view) { return false; }
     bool EnsureResourceSubdirectory(const char*) { return true; }
-    bool RequestResetSettings(bool, bool, bool, bool, bool) { return false; }
+    bool RequestResetSettings(bool, bool, bool, bool) { return false; }
     void RequestResizeHostDisplay(s32, s32) {}
     void RunOnCPUThread(std::function<void()>, bool) {}
     void RefreshGameListAsync(bool) {}
@@ -81,7 +96,7 @@ namespace Host {
     std::vector<std::string> GetStringListSetting(const char*, const char*) { return {}; }
     std::unique_lock<std::mutex> GetSettingsLock() { return std::unique_lock<std::mutex>(); }
     SettingsInterface* GetSettingsInterface() { return nullptr; }
-    void SetDefaultUISettings(SettingsInterface&) {}
+    void SetDefaultUISettings(SettingsInterface& si) {}
     std::unique_ptr<ProgressCallback> CreateHostProgressCallback() { return nullptr; }
 
     // From VMManager.h namespace Host
@@ -128,44 +143,38 @@ namespace Host {
     void RequestExitBigPicture() {}
 } // namespace Host
 
-// CPU tick count for timing - stub returns time in milliseconds
+// CPU tick count for timing
 uint64_t GetCPUTicks() {
     return (uint64_t)std::time(nullptr) * 1000ULL;
 }
 
-// Tick frequency for timing calculations (milliseconds)
 uint64_t GetTickFrequency() {
     return 1000ULL;
 }
 
-// Total physical memory - stub returns 8GB for iPad M4
 uint64_t GetPhysicalMemory() {
     return 8ULL * 1024 * 1024 * 1024;
 }
 
-// Available physical memory - stub
 uint64_t GetAvailablePhysicalMemory() {
     return 4ULL * 1024 * 1024 * 1024;
 }
 
-// OS version string
 std::string GetOSVersionString() {
     return "iOS 16.0";
 }
 
-// Validate drive path (iOS uses sandbox paths)
-// Note: CDVDdiscReader.cpp calls GetValidDrive with a non-const reference
+// Fix: GetValidDrive takes a non-const reference
 std::string GetValidDrive(std::string& path) {
     return path;
 }
 
-// Optical drive list (not available on iOS)
 struct DriveInfo {};
 std::vector<DriveInfo> GetOpticalDriveList() {
     return {};
 }
 
-// CocoaTools stubs - use WindowInfo* instead of void*
+// CocoaTools stubs
 namespace CocoaTools {
     std::string GetBundlePath() { return ""; }
     std::string GetResourcePath() { return ""; }
@@ -175,18 +184,15 @@ namespace CocoaTools {
     std::string GetNonTranslocatedBundlePath() { return ""; }
 }
 
-// DarwinMisc stubs
 namespace DarwinMisc {
     std::string GetCPUClasses() { return "arm64"; }
 }
 
-// FileSystem stubs
 namespace FileSystem {
     void* OpenFDFileContent(const char* s) { return nullptr; }
 }
 
-// x86Emitter stubs (these are x86-specific, should not be called on ARM64)
-// Only used if x86 code is incorrectly compiled for ARM64
+// x86Emitter stubs (x86-specific, should not be called on ARM64)
 namespace x86Emitter {
     class xRegisterInt {};
     class SimdPrefix {};
@@ -200,26 +206,22 @@ namespace x86Emitter {
     void _xMovRtoR(const xRegisterInt&, const xRegisterInt&) {}
 }
 
-// AudioStream stub
 namespace AudioStream {
     void* CreateOboeAudioStream(unsigned int, const AudioStreamParameters&, bool, Error*) {
         return nullptr;
     }
 }
 
-// InputManager stubs
 namespace InputManager {
     std::string ConvertHostKeyboardCodeToIcon(unsigned int) { return ""; }
     std::string ConvertHostKeyboardStringToCode(std::string_view) { return ""; }
     std::string ConvertHostKeyboardCodeToString(unsigned int) { return ""; }
 }
 
-// SDL stub for GetPreferredLocales
 extern "C" const char* SDL_SYS_GetPreferredLocales() {
     return "en_US";
 }
 
-// PageFaultHandler stub
 namespace PageFaultHandler {
     bool Install(Error*) { return false; }
 }
