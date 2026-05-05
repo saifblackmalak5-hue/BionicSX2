@@ -311,11 +311,10 @@ namespace VMManager { namespace Internal {
 
 // HotkeyInfo - must match InputManager.h definition
 struct HotkeyInfo {
-    const char* name;
-    const char* category;
-    const char* display_name;
-    void (*handler)(s32 pressed);
-    HotkeyInfo() : name(nullptr), category(nullptr), display_name(nullptr), handler(nullptr) {}
+    const char* name = nullptr;
+    const char* category = nullptr;
+    const char* display_name = nullptr;
+    void (*handler)(int32_t pressed) = nullptr;
 };
 
 extern "C" {
