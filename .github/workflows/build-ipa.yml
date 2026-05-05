@@ -279,6 +279,16 @@ jobs:
 
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
+      - name: Analyze libPCSX2.a symbols
+        run: |
+          echo '=== SYMBOLS ALREADY IN libPCSX2.a ==='
+          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' T ' | grep -E '(Host::|VMManager::|InputManager::|GSCapture|SharedMemory)' | sort -u || echo "No matching T symbols found"
+          echo '=== UNDEFINED SYMBOLS NEEDED ==='
+          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' U ' | sort -u || echo "No U symbols found"
+          echo '=== ALL UNDEFINED SYMBOLS ==='
+          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' U ' | sort -u > /tmp/undefined_symbols.txt || true
+          cat /tmp/undefined_symbols.txt || echo "Could not read undefined symbols"
+
 
       - name: Package IPA
         run: |
