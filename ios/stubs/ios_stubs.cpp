@@ -296,12 +296,21 @@ namespace Threading {
     void SleepUntil(uint64_t ticks) {}
 }
 
-// GSCapture stubs
+// GSCapture stubs (merged definition)
 struct GSVector2i { int x, y; GSVector2i() : x(0), y(0) {} };
 
 struct GSCapture {
     void Flush() {}
     GSVector2i GetSize() { return GSVector2i(); }
+    bool IsCapturing() { return false; }
+    bool IsCapturingVideo() { return false; }
+    void BeginCapture(float, GSVector2i, float, const std::string&) {}
+    void EndCapture() {}
+    float GetElapsedTime() { return 0.0f; }
+    void* GetEncoderThreadHandle() { return nullptr; }
+    std::string GetNextCaptureFileName() { return ""; }
+    void DeliverVideoFrame(void*) {}
+    void DeliverAudioPacket(short const*) {}
 };
 
 // VMManager::Internal::ResetVMHotkeyState stub
@@ -338,19 +347,4 @@ public:
     static unsigned long GetRuntimePageSize() { return 4096; }
     static unsigned long GetRuntimeCacheLineSize() { return 64; }
     static std::string GetFileMappingName(const char*) { return ""; }
-};
-
-// GSCapture - extended stubs for missing methods
-struct GSCapture {
-    void Flush() {}
-    GSVector2i GetSize() { return GSVector2i(); }
-    bool IsCapturing() { return false; }
-    bool IsCapturingVideo() { return false; }
-    void BeginCapture(float, GSVector2i, float, const std::string&) {}
-    void EndCapture() {}
-    float GetElapsedTime() { return 0.0f; }
-    void* GetEncoderThreadHandle() { return nullptr; }
-    std::string GetNextCaptureFileName() { return ""; }
-    void DeliverVideoFrame(void*) {}
-    void DeliverAudioPacket(short const*) {}
 };
