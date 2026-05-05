@@ -257,10 +257,6 @@ class SharedMemoryMappingArea {
 public:
     SharedMemoryMappingArea();
     ~SharedMemoryMappingArea();
-    void* Create(unsigned long) { return nullptr; }
-    void* Map(void* baseaddr, unsigned long baseaddr_size, void* mapaddr, unsigned long mapaddr_size, const PageProtectionMode& mode) { return nullptr; }
-    void Unmap(void*, unsigned long) {}
-    void Destroy() {}
 };
 // SharedMemoryMappingArea out-of-line definitions
 void* SharedMemoryMappingArea::Create(unsigned long) { return nullptr; }
@@ -271,7 +267,7 @@ void SharedMemoryMappingArea::Destroy() {}
 
 // Out-of-line definitions to ensure symbols are emitted
 SharedMemoryMappingArea::SharedMemoryMappingArea() = default;
-inline SharedMemoryMappingArea::~SharedMemoryMappingArea() = default;
+SharedMemoryMappingArea::~SharedMemoryMappingArea() = default;
 
 // GSDeviceMTL stubs (Metal disabled for iOS) - using void* for Objective-C types
 struct GSTexture;
