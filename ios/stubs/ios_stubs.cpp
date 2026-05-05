@@ -105,7 +105,7 @@ namespace Host {
 
     // From VMManager.h namespace Host
     void LoadSettings(SettingsInterface&, std::unique_lock<std::mutex>&) {}
-    void CheckForSettingsChanges(const Pcsx2Config&) {}
+    void CheckForSettingsChanges(const Pcsx2::Config&) {}
     void OnVMStarting() {}
     void OnVMStarted() {}
     void OnVMDestroyed() {}
@@ -142,7 +142,8 @@ namespace Host {
     // From Achievements.h namespace Host
     void OnAchievementsRefreshed() {}
     void OnAchievementsLoginSuccess(const char*, unsigned int, unsigned int, unsigned int) {}
-    void OnAchievementsLoginRequested(int) {}
+    void OnAchievementsLoginRequested(Achievements::LoginRequestReason) {}
+    namespace Achievements { enum LoginRequestReason {}; }
     void OnAchievementsHardcoreModeChanged(bool) {}
 
     // Additional Host functions from undefined symbols
@@ -153,7 +154,7 @@ namespace Host {
     void OnCoverDownloaderOpenRequested() {}
     void OnCreateMemoryCardOpenRequested() {}
     void OpenHostFileSelectorAsync(std::string_view, bool, std::function<void(const std::string&)>,
-                                   const std::vector<std::string>&, std::string_view) {}
+                                   std::vector<std::string>, std::string_view) {}
 
     namespace Internal {
         s32 GetTranslatedStringImpl(const std::string_view context, const std::string_view msg, char* tbuf, size_t tbuf_space) { return 0; }
@@ -252,13 +253,17 @@ class PageProtectionMode;
 // SharedMemoryMappingArea stubs
 class SharedMemoryMappingArea {
 public:
-    SharedMemoryMappingArea() = default;
-    ~SharedMemoryMappingArea() = default;
+    SharedMemoryMappingArea();
+    ~SharedMemoryMappingArea();
     void* Create(unsigned long) { return nullptr; }
     void* Map(void* baseaddr, unsigned long baseaddr_size, void* mapaddr, unsigned long mapaddr_size, const PageProtectionMode& mode) { return nullptr; }
     void Unmap(void*, unsigned long) {}
     void Destroy() {}
 };
+
+// Out-of-line definitions to ensure symbols are emitted
+SharedMemoryMappingArea::SharedMemoryMappingArea() = default;
+inline SharedMemoryMappingArea::~SharedMemoryMappingArea() = default;
 
 // GSDeviceMTL stubs (Metal disabled for iOS) - using void* for Objective-C types
 struct GSTexture;
@@ -281,9 +286,9 @@ public:
     void Allocate(UploadBuffer&, unsigned long) {}
 };
 
-// MakeGSDeviceMTL and GetMetalAdapterList stubs
-extern "C" void* MakeGSDeviceMTL() { return nullptr; }
-extern "C" void* GetMetalAdapterList() { return nullptr; }
+// MakeGSDeviceMTL and GetMetalAdapterList stubs (need C++ linkage, not extern "C")
+void* MakeGSDeviceMTL() { return nullptr; }
+void* GetMetalAdapterList() { return nullptr; }
 
 // JPEG stub functions (libjpeg not available on iOS)
 struct jpeg_error_mgr {};
@@ -341,7 +346,7 @@ namespace Common {
 // HTTPDownloader stub
 class HTTPDownloader {
 public:
-    static void Create(const std::string) { }
+    static void Create(std::string) { }
 };
 
 // GSVector2i, GSVector2T, and PageProtectionMode stubs
