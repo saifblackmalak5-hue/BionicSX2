@@ -17,30 +17,16 @@
 using u32 = uint32_t;
 using u64 = uint64_t;
 
+// Define DEFAULT_USER_AGENT at the top of the file
 static const char DEFAULT_USER_AGENT[] = "BionicSX2/1.0";
 
 // Forward declarations for PCSX2 types (avoid including headers with complex dependencies)
-struct Pcsx2Config {};  // defined in Config.h - empty stub here to match mangled name
+struct Pcsx2Config;  // defined in Config.h as a global namespace struct
 
 struct SettingsInterface;
 struct ProgressCallback;
 struct Error;
 struct AudioStreamParameters;
-
-// InputBindingKey must match the global namespace union in InputManager.h
-union InputBindingKey {
-    u64 bits;
-    struct {
-        u32 source_type : 4;
-        u32 source_index : 8;
-        u32 source_subtype : 3;
-        u32 modifier : 2;
-        u32 invert : 1;
-        u32 needs_migration : 1;
-        u32 unused : 13;
-        u32 data;
-    };
-};
 
 // Define s32 as int32_t (used in Host::Internal::GetTranslatedStringImpl)
 using s32 = int32_t;
@@ -61,125 +47,30 @@ struct WindowInfo {
 
 namespace Achievements { enum LoginRequestReason {}; }
 
-// Host namespace stubs
+// Host namespace - ONLY stub what's not already defined in Host.cpp
 namespace Host {
-    using s32 = int32_t;
-    const char* TranslateToCString(const std::string_view, const std::string_view) { return ""; }
-    std::string_view TranslateToStringView(const std::string_view, const std::string_view) { return ""; }
-    std::string TranslateToString(const std::string_view, const std::string_view) { return ""; }
-    std::string TranslatePluralToString(const char*, const char*, const char*, int) { return ""; }
-    void ClearTranslationCache() {}
-    void AddOSDMessage(std::string, float) {}
-    void AddKeyedOSDMessage(std::string, std::string, float) {}
-    void AddIconOSDMessage(std::string, const char*, const std::string_view, float) {}
-    void RemoveKeyedOSDMessage(std::string) {}
-    void ClearOSDMessages() {}
-    void ReportInfoAsync(const std::string_view, const std::string_view) {}
-    void ReportFormattedInfoAsync(const std::string_view, const char*, ...) {}
-    void ReportErrorAsync(const std::string_view, const std::string_view) {}
-    void ReportFormattedErrorAsync(const std::string_view, const char*, ...) {}
-    bool ConfirmMessage(const std::string_view, const std::string_view) { return false; }
-    bool ConfirmFormattedMessage(const std::string_view, const char*, ...) { return false; }
-    bool InBatchMode() { return true; }
-    bool InNoGUIMode() { return true; }
-    void OpenURL(const std::string_view) {}
-    bool CopyTextToClipboard(const std::string_view) { return false; }
-    bool EnsureResourceSubdirectory(const char*) { return true; }
-    bool RequestResetSettings(bool, bool, bool, bool, bool) { return false; }
-    void RequestResizeHostDisplay(int32_t, int32_t) {}
-    void RunOnCPUThread(std::function<void()>, bool) {}
-    void RefreshGameListAsync(bool) {}
-    void CancelGameListRefresh() {}
-    void RequestVMShutdown(bool, bool, bool) {}
-    std::string GetHTTPUserAgent() { return "BionicSX2/1.0"; }
-    std::string GetBaseStringSettingValue(const char*, const char*, const char* d = "") { return d; }
-    std::string GetBaseSmallStringSettingValue(const char*, const char*, const char* d = "") { return d; }
-    std::string GetBaseTinyStringSettingValue(const char*, const char*, const char* d = "") { return d; }
-    bool GetBaseBoolSettingValue(const char*, const char*, bool d = false) { return d; }
-    int GetBaseIntSettingValue(const char*, const char*, int d = 0) { return d; }
-    uint32_t GetBaseUIntSettingValue(const char*, const char*, uint32_t d = 0) { return d; }
-    float GetBaseFloatSettingValue(const char*, const char*, float d = 0.0f) { return d; }
-    double GetBaseDoubleSettingValue(const char*, const char*, double d = 0.0) { return d; }
-    std::vector<std::string> GetBaseStringListSetting(const char*, const char*) { return {}; }
-    void SetBaseBoolSettingValue(const char*, const char*, bool) {}
-    void SetBaseIntSettingValue(const char*, const char*, int) {}
-    void SetBaseUIntSettingValue(const char*, const char*, uint32_t) {}
-    void SetBaseFloatSettingValue(const char*, const char*, float) {}
-    void SetBaseStringSettingValue(const char*, const char*, const char*) {}
-    void SetBaseStringListSettingValue(const char*, const char*, const std::vector<std::string>&) {}
-    bool AddBaseValueToStringList(const char*, const char*, const char*) { return false; }
-    bool RemoveBaseValueFromStringList(const char*, const char*, const char*) { return false; }
-    bool ContainsBaseSettingValue(const char*, const char*) { return false; }
-    void RemoveBaseSettingValue(const char*, const char*) {}
-    void CommitBaseSettingChanges() {}
-    std::string GetStringSettingValue(const char*, const char*, const char* d = "") { return d; }
-    bool GetBoolSettingValue(const char*, const char*, bool d = false) { return d; }
-    int GetIntSettingValue(const char*, const char*, int d = 0) { return d; }
-    uint32_t GetUIntSettingValue(const char*, const char*, uint32_t d = 0) { return d; }
-    float GetFloatSettingValue(const char*, const char*, float d = 0.0f) { return d; }
-    double GetDoubleSettingValue(const char*, const char*, double d = 0.0) { return d; }
-    std::vector<std::string> GetStringListSetting(const char*, const char*) { return {}; }
-    std::unique_lock<std::mutex> GetSettingsLock() { return std::unique_lock<std::mutex>(); }
-    SettingsInterface* GetSettingsInterface() { return nullptr; }
-    void SetDefaultUISettings(SettingsInterface& si) {}
-    std::unique_ptr<ProgressCallback> CreateHostProgressCallback() { return nullptr; }
-
-    // From VMManager.h namespace Host
-    void LoadSettings(SettingsInterface&, std::unique_lock<std::mutex>&) {}
+    // From VMManager.h namespace Host - declaration only, defined out-of-line
     void CheckForSettingsChanges(const Pcsx2Config& old_config);
-    void OnVMStarting() {}
-    void OnVMStarted() {}
-    void OnVMDestroyed() {}
-    void OnVMPaused() {}
-    void OnVMResumed() {}
-    void OnPerformanceMetricsUpdated() {}
-    void OnSaveStateLoading(std::string_view) {}
-    void OnSaveStateLoaded(std::string_view, bool) {}
-    void OnSaveStateSaved(std::string_view) {}
-    void OnGameChanged(const std::string& title, const std::string& elf, const std::string& path,
-                       const std::string& serial, uint32_t crc, uint32_t) {}
-    void PumpMessagesOnCPUThread() {}
 
-    // From GS.h namespace Host
-    std::optional<WindowInfo> AcquireRenderWindow(bool) { return std::nullopt; }
-    void BeginPresentFrame() {}
-    void ReleaseRenderWindow() {}
-    bool IsFullscreen() { return false; }
-    void SetFullscreen(bool) {}
-    void OnCaptureStarted(const std::string&) {}
-    void OnCaptureStopped() {}
-
-    // From ImGuiManager.h namespace Host
-    void BeginTextInput() {}
-    void EndTextInput() {}
-
-    // From InputManager.h namespace Host
-    std::optional<WindowInfo> GetTopLevelWindowInfo() { return std::nullopt; }
-    void OnInputDeviceConnected(const std::string_view, const std::string_view) {}
+    // From InputManager.h namespace Host - declaration only, defined out-of-line
     void OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier);
-    void SetMouseMode(bool, bool) {}
-
-    // From Achievements.h namespace Host
-    void OnAchievementsRefreshed() {}
-    void OnAchievementsLoginSuccess(const char*, unsigned int, unsigned int, unsigned int) {}
-    void OnAchievementsLoginRequested(Achievements::LoginRequestReason) {}
-
-    void OnAchievementsHardcoreModeChanged(bool) {}
-
-    // Additional Host functions from undefined symbols
-    bool LocaleCircleConfirm() { return false; }
-    void RequestExitApplication(bool) {}
-    void RequestExitBigPicture() {}
-    bool ShouldPreferHostFileSelector() { return false; }
-    void OnCoverDownloaderOpenRequested() {}
-    void OnCreateMemoryCardOpenRequested() {}
-    void OpenHostFileSelectorAsync(std::string_view, bool, std::function<void(const std::string&)>,
-                                   std::vector<std::string>, std::string_view) {}
-
-    namespace Internal {
-        s32 GetTranslatedStringImpl(const std::string_view context, const std::string_view msg, char* tbuf, size_t tbuf_space) { return 0; }
-    }
 } // namespace Host
+
+// InputBindingKey must match the global namespace union in InputManager.h
+union InputBindingKey {
+    u64 bits;
+    struct {
+        u32 source_type : 4;
+        u32 source_index : 8;
+        u32 source_subtype : 3;
+        u32 modifier : 2;
+        u32 invert : 1;
+        u32 needs_migration : 1;
+        u32 unused : 13;
+        u32 data;
+    };
+};
+
 // Host::CheckForSettingsChanges out-of-line definition
 void Host::CheckForSettingsChanges(const Pcsx2Config& old_config) {}
 
@@ -385,6 +276,7 @@ public:
 
 // Out-of-line definition
 std::unique_ptr<HTTPDownloader> HTTPDownloader::Create(std::string) { return nullptr; }
+
 
 
 // GSVector2i, GSVector2T, and PageProtectionMode stubs
