@@ -285,6 +285,7 @@ jobs:
           clang++ -arch arm64 \
             -isysroot $SDK \
             -miphoneos-version-min=16.0 \
+            -std=c++17 \
             -c ios/stubs/ios_stubs.cpp \
             -o output/Payload/BionicSX2.app/ios_stubs.o
 

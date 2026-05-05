@@ -30,8 +30,8 @@ struct WindowInfo {
     void* display_connection = nullptr;
     void* window_handle = nullptr;
     void* surface_handle = nullptr;
-    u32 surface_width = 0;
-    u32 surface_height = 0;
+    uint32_t surface_width = 0;
+    uint32_t surface_height = 0;
     float surface_scale = 1.0f;
     float surface_refresh_rate = 0.0f;
     static std::optional<float> QueryRefreshRateForWindow(const WindowInfo& wi) { return std::nullopt; }
@@ -61,7 +61,7 @@ namespace Host {
     bool CopyTextToClipboard(const std::string_view) { return false; }
     bool EnsureResourceSubdirectory(const char*) { return true; }
     bool RequestResetSettings(bool, bool, bool, bool) { return false; }
-    void RequestResizeHostDisplay(s32, s32) {}
+    void RequestResizeHostDisplay(int32_t, int32_t) {}
     void RunOnCPUThread(std::function<void()>, bool) {}
     void RefreshGameListAsync(bool) {}
     void CancelGameListRefresh() {}
@@ -72,13 +72,13 @@ namespace Host {
     std::string GetBaseTinyStringSettingValue(const char*, const char*, const char* d = "") { return d; }
     bool GetBaseBoolSettingValue(const char*, const char*, bool d = false) { return d; }
     int GetBaseIntSettingValue(const char*, const char*, int d = 0) { return d; }
-    uint GetBaseUIntSettingValue(const char*, const char*, uint d = 0) { return d; }
+    uint32_t GetBaseUIntSettingValue(const char*, const char*, uint32_t d = 0) { return d; }
     float GetBaseFloatSettingValue(const char*, const char*, float d = 0.0f) { return d; }
     double GetBaseDoubleSettingValue(const char*, const char*, double d = 0.0) { return d; }
     std::vector<std::string> GetBaseStringListSetting(const char*, const char*) { return {}; }
     void SetBaseBoolSettingValue(const char*, const char*, bool) {}
     void SetBaseIntSettingValue(const char*, const char*, int) {}
-    void SetBaseUIntSettingValue(const char*, const char*, uint) {}
+    void SetBaseUIntSettingValue(const char*, const char*, uint32_t) {}
     void SetBaseFloatSettingValue(const char*, const char*, float) {}
     void SetBaseStringSettingValue(const char*, const char*, const char*) {}
     void SetBaseStringListSettingValue(const char*, const char*, const std::vector<std::string>&) {}
@@ -90,7 +90,7 @@ namespace Host {
     std::string GetStringSettingValue(const char*, const char*, const char* d = "") { return d; }
     bool GetBoolSettingValue(const char*, const char*, bool d = false) { return d; }
     int GetIntSettingValue(const char*, const char*, int d = 0) { return d; }
-    uint GetUIntSettingValue(const char*, const char*, uint d = 0) { return d; }
+    uint32_t GetUIntSettingValue(const char*, const char*, uint32_t d = 0) { return d; }
     float GetFloatSettingValue(const char*, const char*, float d = 0.0f) { return d; }
     double GetDoubleSettingValue(const char*, const char*, double d = 0.0) { return d; }
     std::vector<std::string> GetStringListSetting(const char*, const char*) { return {}; }
@@ -112,7 +112,7 @@ namespace Host {
     void OnSaveStateLoaded(std::string_view, bool) {}
     void OnSaveStateSaved(std::string_view) {}
     void OnGameChanged(const std::string& title, const std::string& elf, const std::string& path,
-                       const std::string& serial, u32 crc, u32) {}
+                       const std::string& serial, uint32_t crc, uint32_t) {}
     void PumpMessagesOnCPUThread() {}
 
     // From GS.h namespace Host
