@@ -64,7 +64,7 @@ namespace Host {
     void OpenURL(const std::string_view) {}
     bool CopyTextToClipboard(const std::string_view) { return false; }
     bool EnsureResourceSubdirectory(const char*) { return true; }
-    bool RequestResetSettings(bool, bool, bool, bool) { return false; }
+    bool RequestResetSettings(bool, bool, bool, bool, bool) { return false; }
     void RequestResizeHostDisplay(int32_t, int32_t) {}
     void RunOnCPUThread(std::function<void()>, bool) {}
     void RefreshGameListAsync(bool) {}
@@ -135,16 +135,25 @@ namespace Host {
     // From InputManager.h namespace Host
     std::optional<WindowInfo> GetTopLevelWindowInfo() { return std::nullopt; }
     void OnInputDeviceConnected(const std::string_view, const std::string_view) {}
-    void OnInputDeviceDisconnected(const void*, const std::string_view) {}
+    struct InputBindingKey {};
+    void OnInputDeviceDisconnected(InputBindingKey, const std::string_view) {}
     void SetMouseMode(bool, bool) {}
 
     // From Achievements.h namespace Host
     void OnAchievementsRefreshed() {}
+    void OnAchievementsLoginSuccess(const char*, unsigned int, unsigned int, unsigned int) {}
+    void OnAchievementsLoginRequested(int) {}
+    void OnAchievementsHardcoreModeChanged(bool) {}
 
     // Additional Host functions from undefined symbols
     bool LocaleCircleConfirm() { return false; }
     void RequestExitApplication(bool) {}
     void RequestExitBigPicture() {}
+    bool ShouldPreferHostFileSelector() { return false; }
+    void OnCoverDownloaderOpenRequested() {}
+    void OnCreateMemoryCardOpenRequested() {}
+    void OpenHostFileSelectorAsync(std::string_view, bool, std::function<void(const std::string&)>,
+                                   const std::vector<std::string>&, std::string_view) {}
 
     namespace Internal {
         s32 GetTranslatedStringImpl(const std::string_view context, const std::string_view msg, char* tbuf, size_t tbuf_space) { return 0; }
@@ -212,6 +221,9 @@ namespace x86Emitter {
     void xMOV64() {}
     void xMOVDQA() {}
     void _xMovRtoR(const xRegisterInt&, const xRegisterInt&) {}
+    // xmm0 is a global register variable referenced from recVTLB.cpp
+    struct VRegister {};
+    VRegister xmm0;
 }
 
 namespace AudioStream {
@@ -237,25 +249,38 @@ namespace PageFaultHandler {
 // SharedMemoryMappingArea stubs
 class SharedMemoryMappingArea {
 public:
+    SharedMemoryMappingArea() = default;
+    ~SharedMemoryMappingArea() = default;
     void* Create(unsigned long) { return nullptr; }
-    void* Map(void*, unsigned long, void*, unsigned long, void*) { return nullptr; }
+    void* Map(void* baseaddr, unsigned long baseaddr_size, void* mapaddr, unsigned long mapaddr_size, const PageProtectionMode& mode) { return nullptr; }
     void Unmap(void*, unsigned long) {}
     void Destroy() {}
 };
 
-// GSDeviceMTL stubs (Metal disabled for iOS)
+// GSDeviceMTL stubs (Metal disabled for iOS) - using void* for Objective-C types
+struct GSTexture;
+struct MTLLoadAction {};
 class GSDeviceMTL {
 public:
     void* GetSpinFence() { return nullptr; }
     void EndRenderPass() {}
-    void* BeginRenderPass(void*, void*, int, void*, int, void*, int) { return nullptr; }
+    void* BeginRenderPass(void* /*colorFormat*/, GSTexture* /*colorTex*/, MTLLoadAction /*colorLoad*/,
+                          GSTexture* /*depthTex*/, MTLLoadAction /*depthLoad*/,
+                          GSTexture* /*stencilTex*/, MTLLoadAction /*stencilLoad*/) { return nullptr; }
     void* GetRenderCmdBuf() { return nullptr; }
     void* GetTextureUploadEncoder() { return nullptr; }
     void FlushEncodersForReadback() {}
     void* GetLateTextureUploadEncoder() { return nullptr; }
     void* GetRenderCmdBufWithoutCreate() { return nullptr; }
-    void Allocate(void*, unsigned long) {}
+    struct BufferPair {};
+    struct UploadBuffer {};
+    void Allocate(BufferPair&, unsigned long) {}
+    void Allocate(UploadBuffer&, unsigned long) {}
 };
+
+// MakeGSDeviceMTL and GetMetalAdapterList stubs
+extern "C" void* MakeGSDeviceMTL() { return nullptr; }
+extern "C" void* GetMetalAdapterList() { return nullptr; }
 
 // JPEG stub functions (libjpeg not available on iOS)
 struct jpeg_error_mgr {};
@@ -304,8 +329,23 @@ namespace Threading {
     void SleepUntil(uint64_t ticks) {}
 }
 
-// GSVector2i and PageProtectionMode stubs
+// Common namespace stubs
+namespace Common {
+    void PlaySoundAsync(const char*) {}
+    void InhibitScreensaver(bool) {}
+}
+
+// HTTPDownloader stub
+class HTTPDownloader {
+public:
+    static void Create(const std::string) { }
+};
+
+// GSVector2i, GSVector2T, and PageProtectionMode stubs
+template<typename T>
+struct GSVector2T {};
 struct GSVector2i { int x, y; GSVector2i() : x(0), y(0) {} };
+struct GSTexture {};
 
 // Forward declaration for PageProtectionMode
 class PageProtectionMode {
@@ -317,8 +357,8 @@ public:
 
 // GSCapture namespace stubs (must match GSCapture.h)
 namespace GSCapture {
-    bool BeginCapture(float fps, GSVector2i, float aspect, std::string filename) { return false; }
-    bool DeliverVideoFrame(void* stex) { return false; }
+    bool BeginCapture(float fps, GSVector2T<int>, float aspect, std::string filename) { return false; }
+    bool DeliverVideoFrame(GSTexture* stex) { return false; }
     void DeliverAudioPacket(const short* frames) {}
     void EndCapture() {}
     bool IsCapturing() { return false; }
@@ -351,11 +391,10 @@ struct HotkeyInfo {
     void (*handler)(int32_t pressed) = nullptr;
 };
 
-extern "C" {
-    const HotkeyInfo g_common_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
-    const HotkeyInfo g_gs_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
-    const HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
-}
+// Hotkey arrays - must have external linkage for C++ (no const, no extern "C" for C++ types)
+HotkeyInfo g_common_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
+HotkeyInfo g_gs_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
+HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
 
 // HostSys namespace stubs (must match HostSys.h)
 namespace HostSys {
