@@ -76,6 +76,9 @@ struct GSTexture {};
 
 // GSVector2i
 struct GSVector2i { int x, y; GSVector2i() : x(0), y(0) {} };
+// GSVector2T template (used by GSCapture)
+template<typename T>
+struct GSVector2T { T x, y; };
 
 // PageProtectionMode
 class PageProtectionMode {
@@ -671,7 +674,7 @@ std::unique_ptr<HTTPDownloader> HTTPDownloader::Create(std::string) { return nul
 class SharedMemoryMappingArea {
 public:
     static std::unique_ptr<SharedMemoryMappingArea> Create(size_t size);
-    ~SharedMemoryMappingArea() = default;
+    ~SharedMemoryMappingArea();
     size_t GetSize() const { return 0; }
     size_t GetNumPages() const { return 0; }
     u8* BasePointer() const { return nullptr; }
@@ -681,6 +684,7 @@ public:
     bool Unmap(void* map_base, size_t map_size);
 };
 std::unique_ptr<SharedMemoryMappingArea> SharedMemoryMappingArea::Create(size_t size) { return nullptr; }
+SharedMemoryMappingArea::~SharedMemoryMappingArea() = default;
 u8* SharedMemoryMappingArea::Map(void* file_handle, size_t file_offset, void* map_base, size_t map_size, const PageProtectionMode& mode) { return nullptr; }
 bool SharedMemoryMappingArea::Unmap(void* map_base, size_t map_size) { return false; }
 
@@ -793,6 +797,7 @@ namespace HostSys {
 // ============================================================================
 namespace GSCapture {
     bool BeginCapture(float fps, GSVector2i recommendedResolution, float aspect, std::string filename) { return false; }
+    bool BeginCapture(float fps, GSVector2T<int> resolution, float aspect, std::string filename) { return false; }
     bool DeliverVideoFrame(GSTexture* stex) { return false; }
     void DeliverAudioPacket(const s16* frames) {}
     void EndCapture() {}
