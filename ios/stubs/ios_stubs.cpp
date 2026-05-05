@@ -11,6 +11,11 @@
 #include <functional>
 #include <mutex>
 #include <memory>
+#include <string_view>
+
+// Define PCSX2 types needed for stubs
+using u32 = uint32_t;
+using u64 = uint64_t;
 
 static const char DEFAULT_USER_AGENT[] = "BionicSX2/1.0";
 
@@ -24,6 +29,21 @@ struct SettingsInterface;
 struct ProgressCallback;
 struct Error;
 struct AudioStreamParameters;
+
+// InputBindingKey must match the global namespace union in InputManager.h
+union InputBindingKey {
+    u64 bits;
+    struct {
+        u32 source_type : 4;
+        u32 source_index : 8;
+        u32 source_subtype : 3;
+        u32 modifier : 2;
+        u32 invert : 1;
+        u32 needs_migration : 1;
+        u32 unused : 13;
+        u32 data;
+    };
+};
 
 // Define s32 as int32_t (used in Host::Internal::GetTranslatedStringImpl)
 using s32 = int32_t;
@@ -139,8 +159,7 @@ namespace Host {
     // From InputManager.h namespace Host
     std::optional<WindowInfo> GetTopLevelWindowInfo() { return std::nullopt; }
     void OnInputDeviceConnected(const std::string_view, const std::string_view) {}
-    struct InputBindingKey {};
-    void OnInputDeviceDisconnected(const InputBindingKey key, const std::string_view identifier) {}
+    void OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier);
     void SetMouseMode(bool, bool) {}
 
     // From Achievements.h namespace Host
@@ -166,6 +185,9 @@ namespace Host {
 } // namespace Host
 // Host::CheckForSettingsChanges out-of-line definition
 void Host::CheckForSettingsChanges(const Pcsx2Config& old_config) {}
+
+// Host::OnInputDeviceDisconnected out-of-line definition
+void Host::OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier) {}
 
 
 // CPU tick count for timing
