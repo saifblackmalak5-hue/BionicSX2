@@ -254,15 +254,21 @@ class PageProtectionMode;
 
 // SharedMemoryMappingArea stubs
 class SharedMemoryMappingArea {
-public:
-    SharedMemoryMappingArea();
-    ~SharedMemoryMappingArea();
+	public:
+	    SharedMemoryMappingArea();
+	    ~SharedMemoryMappingArea();
+	    void* Create(unsigned long);
+	    void* Map(void* baseaddr, unsigned long baseaddr_size, void* mapaddr, unsigned long mapaddr_size, const PageProtectionMode& mode);
+	    void Unmap(void*, unsigned long);
+	    void Destroy();
 };
+
 // SharedMemoryMappingArea out-of-line definitions
 void* SharedMemoryMappingArea::Create(unsigned long) { return nullptr; }
 void* SharedMemoryMappingArea::Map(void* baseaddr, unsigned long baseaddr_size, void* mapaddr, unsigned long mapaddr_size, const PageProtectionMode& mode) { return nullptr; }
 void SharedMemoryMappingArea::Unmap(void*, unsigned long) {}
 void SharedMemoryMappingArea::Destroy() {}
+
 
 
 // Out-of-line definitions to ensure symbols are emitted
