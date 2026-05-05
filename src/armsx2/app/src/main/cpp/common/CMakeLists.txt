@@ -127,7 +127,6 @@ elseif(_M_ARM64)
 else()
 	# Don't include x86 emitter for unknown platforms
 endif()
-endif()
 
 if(WIN32)
 	enable_language(ASM_MASM)

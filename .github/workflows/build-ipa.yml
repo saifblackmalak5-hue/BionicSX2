@@ -246,7 +246,7 @@ jobs:
         run: |
           BASE="src/armsx2/app/src/main/cpp"
           printf '// BionicSX2 iOS stub\n' > $BASE/pcsx2/CDVD/Darwin/DriveUtility.cpp
-          printf "// BionicSX2 iOS stub\n" > $BASE/pcsx2/CDVD/Darwin/IOCtlSrc.cpp
+          cp ios/stubs/IOCtlSrc.cpp $BASE/pcsx2/CDVD/Darwin/IOCtlSrc.cpp
           echo "Patch 18 done"
 
       - name: Patch 19 - Replace PCAP with iOS stubs
