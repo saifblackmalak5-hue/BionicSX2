@@ -248,3 +248,39 @@ public:
     void* GetRenderCmdBufWithoutCreate() { return nullptr; }
     void Allocate(void*, unsigned long) {}
 };
+
+// JPEG stub functions (libjpeg not available on iOS)
+struct jpeg_error_mgr {};
+struct jpeg_compress_struct {};
+struct jpeg_decompress_struct {};
+struct jpeg_source_mgr {};
+struct jpeg_destination_mgr {};
+struct JSAMPARRAY__ { unsigned char** data; };
+typedef JSAMPARRAY__* JSAMPARRAY;
+typedef unsigned char* JSAMPROW;
+
+extern "C" {
+    jpeg_error_mgr* jpeg_std_error(jpeg_error_mgr* err) { return err; }
+    void jpeg_create_compress(jpeg_compress_struct*) {}
+    void jpeg_set_defaults(jpeg_compress_struct*) {}
+    void jpeg_set_quality(jpeg_compress_struct*, int, int) {}
+    void jpeg_start_compress(jpeg_compress_struct*, int) {}
+    void jpeg_write_scanlines(jpeg_compress_struct*, JSAMPARRAY, unsigned int) {}
+    void jpeg_finish_compress(jpeg_compress_struct*) {}
+    void jpeg_destroy_compress(jpeg_compress_struct*) {}
+    void jpeg_create_decompress(jpeg_decompress_struct*) {}
+    void jpeg_destroy_decompress(jpeg_decompress_struct*) {}
+    int jpeg_read_header(jpeg_decompress_struct*, int) { return 0; }
+    void jpeg_start_decompress(jpeg_decompress_struct*) {}
+    void jpeg_read_scanlines(jpeg_decompress_struct*, JSAMPARRAY, unsigned int) {}
+    void jpeg_finish_decompress(jpeg_decompress_struct*) {}
+    void jpeg_mem_src(jpeg_decompress_struct*, unsigned char*, unsigned long) {}
+    void jpeg_mem_dest(jpeg_compress_struct*, unsigned char**, unsigned long*) {}
+    int jpeg_resync_to_restart(jpeg_decompress_struct*, int) { return 0; }
+    void jpeg_set_colorspace(jpeg_compress_struct*, int) {}
+    void jpeg_default_colorspace(jpeg_compress_struct*) {}
+    void jpeg_set_linear_quality(jpeg_compress_struct*, int, int) {}
+    boolean jpeg_has_multiple_scans(jpeg_decompress_struct*) { return FALSE; }
+    boolean jpeg_start_output(jpeg_decompress_struct*, int) { return FALSE; }
+    boolean jpeg_finish_output(jpeg_decompress_struct*) { return FALSE; }
+}
