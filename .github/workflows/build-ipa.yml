@@ -254,9 +254,8 @@ jobs:
           # Replace pcap_io.h and pcap_io.cpp with iOS stubs to avoid linking pcap functions
           cp ios/stubs/pcap_io.h src/armsx2/app/src/main/cpp/pcsx2/DEV9/pcap_io.h
           cp ios/stubs/pcap_io.cpp src/armsx2/app/src/main/cpp/pcsx2/DEV9/pcap_io.cpp
-          # Also stub out net.cpp and smap.cpp to not use pcap on iOS
-          sed -i '' 's|#include "pcap_io.h"|// BionicSX2 iOS: pcap_io.h disabled|g' src/armsx2/app/src/main/cpp/pcsx2/DEV9/net.cpp
-          sed -i '' 's|#include "pcap_io.h"|// BionicSX2 iOS: pcap_io.h disabled|g' src/armsx2/app/src/main/cpp/pcsx2/DEV9/smap.cpp
+          # Patch net.cpp and smap.cpp to use the stub pcap_io.h (already copied above)
+          # We keep the #include "pcap_io.h" in these files - it now points to the stub header
           echo "Patch 19 done - PCAP stubs applied"
 
       - name: Patch 20 - Disable JPEG in common/Image.cpp for iOS
