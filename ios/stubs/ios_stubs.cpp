@@ -246,6 +246,9 @@ namespace PageFaultHandler {
     bool Install(Error*) { return false; }
 }
 
+// Forward declaration
+class PageProtectionMode;
+
 // SharedMemoryMappingArea stubs
 class SharedMemoryMappingArea {
 public:
