@@ -259,6 +259,11 @@ struct JSAMPARRAY__ { unsigned char** data; };
 typedef JSAMPARRAY__* JSAMPARRAY;
 typedef unsigned char* JSAMPROW;
 
+// Define JPEG boolean type (normally from jmorecfg.h)
+typedef int boolean;
+#define FALSE 0
+#define TRUE 1
+
 extern "C" {
     jpeg_error_mgr* jpeg_std_error(jpeg_error_mgr* err) { return err; }
     void jpeg_create_compress(jpeg_compress_struct*) {}
@@ -280,11 +285,41 @@ extern "C" {
     void jpeg_set_colorspace(jpeg_compress_struct*, int) {}
     void jpeg_default_colorspace(jpeg_compress_struct*) {}
     void jpeg_set_linear_quality(jpeg_compress_struct*, int, int) {}
-    // Define JPEG boolean type (normally from jmorecfg.h)
-    typedef int boolean;
-    #define FALSE 0
-    #define TRUE 1
     boolean jpeg_has_multiple_scans(jpeg_decompress_struct*) { return FALSE; }
     boolean jpeg_start_output(jpeg_decompress_struct*, int) { return FALSE; }
     boolean jpeg_finish_output(jpeg_decompress_struct*) { return FALSE; }
+}
+
+// Threading stubs (normally in DarwinMisc.cpp)
+namespace Threading {
+    void Sleep(int ms) { if (ms > 0) {} }
+    void SleepUntil(uint64_t ticks) {}
+}
+
+// GSCapture stubs
+struct GSVector2i { int x, y; GSVector2i() : x(0), y(0) {} };
+
+struct GSCapture {
+    void Flush() {}
+    GSVector2i GetSize() { return GSVector2i(); }
+};
+
+// VMManager::Internal::ResetVMHotkeyState stub
+namespace VMManager { namespace Internal {
+    void ResetVMHotkeyState() {}
+}}
+
+// HotkeyInfo forward declaration
+struct HotkeyInfo {
+    const char* name;
+    const char* category;
+    const char* display_name;
+    int key_code;
+    HotkeyInfo() : name(nullptr), category(nullptr), display_name(nullptr), key_code(0) {}
+};
+
+extern "C" {
+    const HotkeyInfo g_common_hotkeys[] = {{nullptr, nullptr, nullptr, 0}};
+    const HotkeyInfo g_gs_hotkeys[] = {{nullptr, nullptr, nullptr, 0}};
+    const HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, 0}};
 }

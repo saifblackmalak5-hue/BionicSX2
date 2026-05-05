@@ -179,7 +179,9 @@ cubeb_init(cubeb ** context, char const * context_name,
     oss_init,
 #endif
 #if defined(USE_AUDIOUNIT)
-    audiounit_init,
+    // audiounit_init, // iOS: disabled
+
+    // audiounit_init,
 #endif
 #if defined(USE_WASAPI)
     wasapi_init,
@@ -228,7 +230,7 @@ cubeb_get_backend_names()
     "alsa",
 #endif
 #if defined(USE_AUDIOUNIT)
-    "audiounit",
+    // "audiounit", // iOS: disabled
 #endif
 #if defined(USE_WASAPI)
     "wasapi",

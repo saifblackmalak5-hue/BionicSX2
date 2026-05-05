@@ -122,12 +122,11 @@ if(_M_X86)
 		emitter/x86emitter.h
 		emitter/x86types.h
 	)
+elseif(_M_ARM64)
+	# ARM64 emitter files would go here
 else()
-	target_sources(common PRIVATE
-		emitter/x86emitter.cpp
-		emitter/x86emitter.h
-		emitter/x86types.h
-	)
+	# Don't include x86 emitter for unknown platforms
+endif()
 endif()
 
 if(WIN32)
@@ -199,17 +198,19 @@ if (USE_GCC AND CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 endif()
 
 if(NOT WIN32)
-	# libcurl-based HTTPDownloader
-	target_sources(common PRIVATE
-		HTTPDownloaderCurl.cpp
-		HTTPDownloaderCurl.h
-	)
-	if(ANDROID)
-		target_link_libraries(common PRIVATE curl ssl crypto nghttp2 pcap)
-	else()
-		target_link_libraries(common PRIVATE
-			CURL::libcurl
+	if(CURL_FOUND)
+		# libcurl-based HTTPDownloader
+		target_sources(common PRIVATE
+			HTTPDownloaderCurl.cpp
+			HTTPDownloaderCurl.h
 		)
+		if(ANDROID)
+			target_link_libraries(common PRIVATE curl ssl crypto nghttp2 pcap)
+		else()
+			target_link_libraries(common PRIVATE
+				CURL::libcurl
+			)
+		endif()
 	endif()
 endif()
 
