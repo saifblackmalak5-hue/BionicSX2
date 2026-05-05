@@ -146,8 +146,8 @@ jobs:
               -DPNG_ARM_NEON_OPT=0 -DPNG_NO_FP \
               -c "$f" -o "${base}.o"
           done
-          # Create static library
-          ar rcs /tmp/ios-libs/lib/libpng.a *.o
+          # Create static library (exclude pngtest.o which has its own main())
+          ar rcs /tmp/ios-libs/lib/libpng.a $(ls *.o | grep -v pngtest)
           # Copy headers
           cp png.h pngconf.h pnglibconf.h /tmp/ios-libs/include/libpng16/
           ls -la /tmp/ios-libs/lib/libpng.a
@@ -286,7 +286,7 @@ jobs:
 
           # Collect all static libraries from build directory
           echo "=== Checking for .a files in build directory ==="
-          find build -name "*.a" | tee /tmp/libs.txt
+          find build -name "*.a" | grep -v "libSDL_uclibc" | tee /tmp/libs.txt
           LIB_COUNT=$(find build -name "*.a" | wc -l)
           echo "Found $LIB_COUNT static libraries"
           if [ "$LIB_COUNT" -eq 0 ]; then
