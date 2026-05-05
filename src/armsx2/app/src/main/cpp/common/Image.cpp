@@ -381,15 +381,15 @@ bool PNGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality
 	return true;
 }
 
-namespace
-{
 #ifdef PCSX2_IOS_BUILD
-// Stub implementations for iOS
+// iOS stubs
 static bool JPEGBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size) { return false; }
 static bool JPEGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality) { return false; }
 static bool JPEGFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp) { return false; }
 static bool JPEGFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality) { return false; }
 #else
+namespace
+{
 	struct JPEGErrorHandler
 	{
 		jpeg_error_mgr err;
@@ -690,7 +690,7 @@ bool JPEGFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp,
 }
 
 #endif // !PCSX2_IOS_BUILD
-static bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
+bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
 {
 	int width, height;
 	if (!WebPGetInfo(static_cast<const u8*>(buffer), buffer_size, &width, &height) || width <= 0 || height <= 0)
@@ -712,7 +712,7 @@ static bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffe
 	return true;
 }
 
-static bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality)
+bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality)
 {
 	u8* encoded_data;
 	const size_t encoded_size =
@@ -727,7 +727,7 @@ static bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8
 	return true;
 }
 
-static bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
+bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
 {
 	std::optional<std::vector<u8>> data = FileSystem::ReadBinaryFile(fp);
 	if (!data.has_value())
@@ -736,7 +736,7 @@ static bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* f
 	return WebPBufferLoader(image, data->data(), data->size());
 }
 
-static bool WebPFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality)
+bool WebPFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality)
 {
 	std::vector<u8> buffer;
 	if (!WebPBufferSaver(image, &buffer, quality))
