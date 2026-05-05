@@ -20,10 +20,7 @@ using u64 = uint64_t;
 static const char DEFAULT_USER_AGENT[] = "BionicSX2/1.0";
 
 // Forward declarations for PCSX2 types (avoid including headers with complex dependencies)
-namespace Pcsx2 {
-    struct Config;
-}
-using Pcsx2Config = Pcsx2::Config;
+struct Pcsx2Config {};  // defined in Config.h - empty stub here to match mangled name
 
 struct SettingsInterface;
 struct ProgressCallback;
