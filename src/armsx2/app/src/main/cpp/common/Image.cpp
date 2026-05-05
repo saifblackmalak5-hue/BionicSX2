@@ -33,313 +33,6 @@ static bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffe
 static bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality);
 static bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp);
 static bool WebPFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality);
-#ifdef PCSX2_IOS_BUILD
-// Stub implementations for iOS - libjpeg not available on iOS
-static bool JPEGBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size) { return false; }
-static bool JPEGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality) { return false; }
-static bool JPEGFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp) { return false; }
-static bool JPEGFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality) { return false; }
-#else
-	struct JPEGErrorHandler
-	{
-		jpeg_error_mgr err;
-		fastjmp_buf jbuf;
-
-		JPEGErrorHandler()
-		{
-			jpeg_std_error(&err);
-			err.error_exit = &ErrorExit;
-		}
-
-		static void ErrorExit(j_common_ptr cinfo)
-		{
-			JPEGErrorHandler* eh = (JPEGErrorHandler*)cinfo->err;
-			char msg[JMSG_LENGTH_MAX];
-			eh->err.format_message(cinfo, msg);
-			Console.ErrorFmt("libjpeg fatal error: {}", msg);
-			fastjmp_jmp(&eh->jbuf, 1);
-		}
-	};
-} // namespace
-
-template <typename T>
-static bool WrapJPEGDecompress(RGBA8Image* image, T setup_func)
-{
-	std::vector<u8> scanline;
-	jpeg_decompress_struct info = {};
-
-	// NOTE: Be **very** careful not to allocate memory after calling this function.
-	// It won't get freed, because fastjmp does not unwind the stack.
-	JPEGErrorHandler errhandler;
-	if (fastjmp_set(&errhandler.jbuf) != 0)
-	{
-		jpeg_destroy_decompress(&info);
-		return false;
-	}
-	info.err = &errhandler.err;
-	jpeg_create_decompress(&info);
-	setup_func(info);
-
-	const int herr = jpeg_read_header(&info, TRUE);
-	if (herr != JPEG_HEADER_OK)
-	{
-		Console.ErrorFmt("jpeg_read_header() returned {}", herr);
-		return false;
-	}
-
-	if (info.image_width == 0 || info.image_height == 0 || info.num_components < 3)
-	{
-		Console.ErrorFmt("Invalid image dimensions: {}x{}x{}", info.image_width, info.image_height, info.num_components);
-		return false;
-	}
-
-	info.out_color_space = JCS_RGB;
-	info.out_color_components = 3;
-
-	if (!jpeg_start_decompress(&info))
-	{
-		Console.ErrorFmt("jpeg_start_decompress() returned failure");
-		return false;
-	}
-
-	image->SetSize(info.image_width, info.image_height);
-	scanline.resize(info.image_width * 3);
-
-	u8* scanline_buffer[1] = {scanline.data()};
-		bool result = true;
-	for (u32 y = 0; y < info.image_height; y++)
-	{
-		if (jpeg_read_scanlines(&info, scanline_buffer, 1) != 1)
-		{
-			Console.ErrorFmt("jpeg_read_scanlines() failed at row {}", y);
-			result = false;
-			break;
-		}
-
-		// RGB -> RGBA
-		const u8* src_ptr = scanline.data();
-		u32* dst_ptr = image->GetRowPixels(y);
-		for (u32 x = 0; x < info.image_width; x++)
-		{
-			*(dst_ptr++) = (static_cast<u32>(src_ptr[0]) | (static_cast<u32>(src_ptr[1]) << 8) | (static_cast<u32>(src_ptr[2]) << 16) | 0xFF000000u);
-			src_ptr += 3;
-		}
-	}
-
-	jpeg_finish_decompress(&info);
-	jpeg_destroy_decompress(&info);
-	return result;
-}
-
-static bool JPEGBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
-{
-	return WrapJPEGDecompress(image, [buffer, buffer_size](jpeg_decompress_struct& info) {
-		jpeg_mem_src(&info, static_cast<const unsigned char*>(buffer), buffer_size);
-	});
-}
-
-static bool JPEGFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
-{
-	static constexpr u32 BUFFER_SIZE = 16384;
-
-	struct FileCallback
-	{
-		jpeg_source_mgr mgr;
-
-		std::FILE* fp;
-		std::unique_ptr<u8[]> buffer;
-		bool end_of_file;
-	};
-
-	FileCallback cb = {
-		.mgr = {
-			.init_source = [](j_decompress_ptr cinfo) {},
-			.fill_input_buffer = [](j_decompress_ptr cinfo) -> boolean {
-				FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->src, FileCallback, mgr);
-				cb->mgr.next_input_byte = cb->buffer.get();
-				if (cb->end_of_file)
-				{
-					cb->buffer[0] = 0xFF;
-					cb->buffer[1] = JPEG_EOI;
-					cb->mgr.bytes_in_buffer = 2;
-					return TRUE;
-				}
-
-				const size_t r = std::fread(cb->buffer.get(), 1, BUFFER_SIZE, cb->fp);
-				cb->end_of_file |= (std::feof(cb->fp) != 0);
-				cb->mgr.bytes_in_buffer = r;
-				return TRUE;
-			},
-			.skip_input_data =
-				[](j_decompress_ptr cinfo, long num_bytes) {
-					FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->src, FileCallback, mgr);
-					const size_t skip_in_buffer = std::min<size_t>(cb->mgr.bytes_in_buffer, static_cast<size_t>(num_bytes));
-					cb->mgr.next_input_byte += skip_in_buffer;
-					cb->mgr.bytes_in_buffer -= skip_in_buffer;
-
-					const size_t seek_cur = static_cast<size_t>(num_bytes) - skip_in_buffer;
-					if (seek_cur > 0)
-					{
-						if (FileSystem::FSeek64(cb->fp, static_cast<size_t>(seek_cur), SEEK_CUR) != 0)
-						{
-							cb->end_of_file = true;
-							return;
-						}
-					}
-				},
-			.resync_to_restart = jpeg_resync_to_restart,
-			.term_source = [](j_decompress_ptr cinfo) {},
-		},
-		.fp = fp,
-		.buffer = std::make_unique<u8[]>(BUFFER_SIZE),
-		.end_of_file = false,
-	};
-
-	return WrapJPEGDecompress(image, [&cb](jpeg_decompress_struct& info) { info.src = &cb.mgr; });
-}
-
-template <typename T>
-static bool WrapJPEGCompress(const RGBA8Image& image, u8 quality, T setup_func)
-{
-	std::vector<u8> scanline;
-	jpeg_compress_struct info = {};
-
-	// NOTE: Be **very** careful not to allocate memory after calling this function.
-	// It won't get freed, because fastjmp does not unwind the stack.
-	JPEGErrorHandler errhandler;
-	if (fastjmp_set(&errhandler.jbuf) != 0)
-	{
-		jpeg_destroy_compress(&info);
-		return false;
-	}
-	info.err = &errhandler.err;
-	jpeg_create_compress(&info);
-	setup_func(info);
-
-	info.image_width = image.GetWidth();
-	info.image_height = image.GetHeight();
-	info.in_color_space = JCS_RGB;
-	info.input_components = 3;
-
-	jpeg_set_defaults(&info);
-	jpeg_set_quality(&info, quality, TRUE);
-	jpeg_start_compress(&info, TRUE);
-
-	scanline.resize(image.GetWidth() * 3);
-	u8* scanline_buffer[1] = {scanline.data()};
-	bool result = true;
-	for (u32 y = 0; y < info.image_height; y++)
-	{
-		// RGBA -> RGB
-		u8* dst_ptr = scanline.data();
-		const u32* src_ptr = image.GetRowPixels(y);
-		for (u32 x = 0; x < info.image_width; x++)
-		{
-			const u32 rgba = *(src_ptr++);
-			*(dst_ptr++) = static_cast<u8>(rgba);
-			*(dst_ptr++) = static_cast<u8>(rgba >> 8);
-			*(dst_ptr++) = static_cast<u8>(rgba >> 16);
-		}
-
-		if (jpeg_write_scanlines(&info, scanline_buffer, 1) != 1)
-		{
-			Console.ErrorFmt("jpeg_write_scanlines() failed at row {}", y);
-			result = false;
-			break;
-		}
-	}
-
-	jpeg_finish_compress(&info);
-	jpeg_destroy_compress(&info);
-	return result;
-}
-
-static bool JPEGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality)
-{
-	// give enough space to avoid reallocs
-	buffer->resize(image.GetWidth() * image.GetHeight() * 2);
-
-	struct MemCallback
-	{
-		jpeg_destination_mgr mgr;
-		std::vector<u8>* buffer;
-		size_t buffer_used;
-	};
-
-	MemCallback cb;
-	cb.buffer = buffer;
-	cb.buffer_used = 0;
-	cb.mgr.next_output_byte = buffer->data();
-	cb.mgr.free_in_buffer = buffer->size();
-	cb.mgr.init_destination = [](j_compress_ptr cinfo) {};
-	cb.mgr.empty_output_buffer = [](j_compress_ptr cinfo) -> boolean {
-		MemCallback* cb = (MemCallback*)cinfo->dest;
-
-		// double size
-		cb->buffer_used = cb->buffer->size();
-		cb->buffer->resize(cb->buffer->size() * 2);
-		cb->mgr.next_output_byte = cb->buffer->data() + cb->buffer_used;
-		cb->mgr.free_in_buffer = cb->buffer->size() - cb->buffer_used;
-		return TRUE;
-	};
-	cb.mgr.term_destination = [](j_compress_ptr cinfo) {
-		MemCallback* cb = (MemCallback*)cinfo->dest;
-
-		// get final size
-		cb->buffer->resize(cb->buffer->size() - cb->mgr.free_in_buffer);
-	};
-
-	return WrapJPEGCompress(image, quality, [&cb](jpeg_compress_struct& info) { info.dest = &cb.mgr; });
-}
-
-static bool JPEGFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality)
-{
-	static constexpr u32 BUFFER_SIZE = 16384;
-
-	struct FileCallback
-	{
-		jpeg_destination_mgr mgr;
-
-		std::FILE* fp;
-		std::unique_ptr<u8[]> buffer;
-		bool write_error;
-	};
-
-	FileCallback cb = {
-		.mgr = {
-			.init_destination =
-				[](j_compress_ptr cinfo) {
-					FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->dest, FileCallback, mgr);
-					cb->mgr.next_output_byte = cb->buffer.get();
-					cb->mgr.free_in_buffer = BUFFER_SIZE;
-				},
-			.empty_output_buffer = [](j_compress_ptr cinfo) -> boolean {
-				FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->dest, FileCallback, mgr);
-				if (!cb->write_error)
-					cb->write_error |= (std::fwrite(cb->buffer.get(), 1, BUFFER_SIZE, cb->fp) != BUFFER_SIZE);
-
-				cb->mgr.next_output_byte = cb->buffer.get();
-				cb->mgr.free_in_buffer = BUFFER_SIZE;
-				return TRUE;
-			},
-			.term_destination =
-				[](j_compress_ptr cinfo) {
-					FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->dest, FileCallback, mgr);
-					const size_t left = BUFFER_SIZE - cb->mgr.free_in_buffer;
-					if (left > 0 && !cb->write_error)
-						cb->write_error |= (std::fwrite(cb->buffer.get(), 1, left, cb->fp) != left);
-				},
-		},
-		.fp = fp,
-		.buffer = std::make_unique<u8[]>(BUFFER_SIZE),
-		.write_error = false,
-	};
-
-	return (WrapJPEGCompress(image, quality, [&cb](jpeg_compress_struct& info) { info.dest = &cb.mgr; }) &&
-			!cb.write_error);
-}
-#endif // !PCSX2_IOS_BUILD
-
 
 struct FormatHandler
 {
@@ -690,7 +383,314 @@ bool PNGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality
 
 namespace
 {
-bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
+#ifdef PCSX2_IOS_BUILD
+// Stub implementations for iOS
+static bool JPEGBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size) { return false; }
+static bool JPEGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality) { return false; }
+static bool JPEGFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp) { return false; }
+static bool JPEGFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality) { return false; }
+#else
+	struct JPEGErrorHandler
+	{
+		jpeg_error_mgr err;
+		fastjmp_buf jbuf;
+
+		JPEGErrorHandler()
+		{
+			jpeg_std_error(&err);
+			err.error_exit = &ErrorExit;
+		}
+
+		static void ErrorExit(j_common_ptr cinfo)
+		{
+			JPEGErrorHandler* eh = (JPEGErrorHandler*)cinfo->err;
+			char msg[JMSG_LENGTH_MAX];
+			eh->err.format_message(cinfo, msg);
+			Console.ErrorFmt("libjpeg fatal error: {}", msg);
+			fastjmp_jmp(&eh->jbuf, 1);
+		}
+	};
+} // namespace
+
+template <typename T>
+static bool WrapJPEGDecompress(RGBA8Image* image, T setup_func)
+{
+	std::vector<u8> scanline;
+	jpeg_decompress_struct info = {};
+
+	// NOTE: Be **very** careful not to allocate memory after calling this function.
+	// It won't get freed, because fastjmp does not unwind the stack.
+	JPEGErrorHandler errhandler;
+	if (fastjmp_set(&errhandler.jbuf) != 0)
+	{
+		jpeg_destroy_decompress(&info);
+		return false;
+	}
+	info.err = &errhandler.err;
+	jpeg_create_decompress(&info);
+	setup_func(info);
+
+	const int herr = jpeg_read_header(&info, TRUE);
+	if (herr != JPEG_HEADER_OK)
+	{
+		Console.ErrorFmt("jpeg_read_header() returned {}", herr);
+		return false;
+	}
+
+	if (info.image_width == 0 || info.image_height == 0 || info.num_components < 3)
+	{
+		Console.ErrorFmt("Invalid image dimensions: {}x{}x{}", info.image_width, info.image_height, info.num_components);
+		return false;
+	}
+
+	info.out_color_space = JCS_RGB;
+	info.out_color_components = 3;
+
+	if (!jpeg_start_decompress(&info))
+	{
+		Console.ErrorFmt("jpeg_start_decompress() returned failure");
+		return false;
+	}
+
+	image->SetSize(info.image_width, info.image_height);
+	scanline.resize(info.image_width * 3);
+
+	u8* scanline_buffer[1] = {scanline.data()};
+	bool result = true;
+	for (u32 y = 0; y < info.image_height; y++)
+	{
+		if (jpeg_read_scanlines(&info, scanline_buffer, 1) != 1)
+		{
+			Console.ErrorFmt("jpeg_read_scanlines() failed at row {}", y);
+			result = false;
+			break;
+		}
+
+		// RGB -> RGBA
+		const u8* src_ptr = scanline.data();
+		u32* dst_ptr = image->GetRowPixels(y);
+		for (u32 x = 0; x < info.image_width; x++)
+		{
+			*(dst_ptr++) = (static_cast<u32>(src_ptr[0]) | (static_cast<u32>(src_ptr[1]) << 8) | (static_cast<u32>(src_ptr[2]) << 16) | 0xFF000000u);
+			src_ptr += 3;
+		}
+	}
+
+	jpeg_finish_decompress(&info);
+	jpeg_destroy_decompress(&info);
+	return result;
+}
+
+bool JPEGBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
+{
+	return WrapJPEGDecompress(image, [buffer, buffer_size](jpeg_decompress_struct& info) {
+		jpeg_mem_src(&info, static_cast<const unsigned char*>(buffer), buffer_size);
+	});
+}
+
+bool JPEGFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
+{
+	static constexpr u32 BUFFER_SIZE = 16384;
+
+	struct FileCallback
+	{
+		jpeg_source_mgr mgr;
+
+		std::FILE* fp;
+		std::unique_ptr<u8[]> buffer;
+		bool end_of_file;
+	};
+
+	FileCallback cb = {
+		.mgr = {
+			.init_source = [](j_decompress_ptr cinfo) {},
+			.fill_input_buffer = [](j_decompress_ptr cinfo) -> boolean {
+				FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->src, FileCallback, mgr);
+				cb->mgr.next_input_byte = cb->buffer.get();
+				if (cb->end_of_file)
+				{
+					cb->buffer[0] = 0xFF;
+					cb->buffer[1] = JPEG_EOI;
+					cb->mgr.bytes_in_buffer = 2;
+					return TRUE;
+				}
+
+				const size_t r = std::fread(cb->buffer.get(), 1, BUFFER_SIZE, cb->fp);
+				cb->end_of_file |= (std::feof(cb->fp) != 0);
+				cb->mgr.bytes_in_buffer = r;
+				return TRUE;
+			},
+			.skip_input_data =
+				[](j_decompress_ptr cinfo, long num_bytes) {
+					FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->src, FileCallback, mgr);
+					const size_t skip_in_buffer = std::min<size_t>(cb->mgr.bytes_in_buffer, static_cast<size_t>(num_bytes));
+					cb->mgr.next_input_byte += skip_in_buffer;
+					cb->mgr.bytes_in_buffer -= skip_in_buffer;
+
+					const size_t seek_cur = static_cast<size_t>(num_bytes) - skip_in_buffer;
+					if (seek_cur > 0)
+					{
+						if (FileSystem::FSeek64(cb->fp, static_cast<size_t>(seek_cur), SEEK_CUR) != 0)
+						{
+							cb->end_of_file = true;
+							return;
+						}
+					}
+				},
+			.resync_to_restart = jpeg_resync_to_restart,
+			.term_source = [](j_decompress_ptr cinfo) {},
+		},
+		.fp = fp,
+		.buffer = std::make_unique<u8[]>(BUFFER_SIZE),
+		.end_of_file = false,
+	};
+
+	return WrapJPEGDecompress(image, [&cb](jpeg_decompress_struct& info) { info.src = &cb.mgr; });
+}
+
+template <typename T>
+static bool WrapJPEGCompress(const RGBA8Image& image, u8 quality, T setup_func)
+{
+	std::vector<u8> scanline;
+	jpeg_compress_struct info = {};
+
+	// NOTE: Be **very** careful not to allocate memory after calling this function.
+	// It won't get freed, because fastjmp does not unwind the stack.
+	JPEGErrorHandler errhandler;
+	if (fastjmp_set(&errhandler.jbuf) != 0)
+	{
+		jpeg_destroy_compress(&info);
+		return false;
+	}
+	info.err = &errhandler.err;
+	jpeg_create_compress(&info);
+	setup_func(info);
+
+	info.image_width = image.GetWidth();
+	info.image_height = image.GetHeight();
+	info.in_color_space = JCS_RGB;
+	info.input_components = 3;
+
+	jpeg_set_defaults(&info);
+	jpeg_set_quality(&info, quality, TRUE);
+	jpeg_start_compress(&info, TRUE);
+
+	scanline.resize(image.GetWidth() * 3);
+	u8* scanline_buffer[1] = {scanline.data()};
+	bool result = true;
+	for (u32 y = 0; y < info.image_height; y++)
+	{
+		// RGBA -> RGB
+		u8* dst_ptr = scanline.data();
+		const u32* src_ptr = image.GetRowPixels(y);
+		for (u32 x = 0; x < info.image_width; x++)
+		{
+			const u32 rgba = *(src_ptr++);
+			*(dst_ptr++) = static_cast<u8>(rgba);
+			*(dst_ptr++) = static_cast<u8>(rgba >> 8);
+			*(dst_ptr++) = static_cast<u8>(rgba >> 16);
+		}
+
+		if (jpeg_write_scanlines(&info, scanline_buffer, 1) != 1)
+		{
+			Console.ErrorFmt("jpeg_write_scanlines() failed at row {}", y);
+			result = false;
+			break;
+		}
+	}
+
+	jpeg_finish_compress(&info);
+	jpeg_destroy_compress(&info);
+	return result;
+}
+
+bool JPEGBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality)
+{
+	// give enough space to avoid reallocs
+	buffer->resize(image.GetWidth() * image.GetHeight() * 2);
+
+	struct MemCallback
+	{
+		jpeg_destination_mgr mgr;
+		std::vector<u8>* buffer;
+		size_t buffer_used;
+	};
+
+	MemCallback cb;
+	cb.buffer = buffer;
+	cb.buffer_used = 0;
+	cb.mgr.next_output_byte = buffer->data();
+	cb.mgr.free_in_buffer = buffer->size();
+	cb.mgr.init_destination = [](j_compress_ptr cinfo) {};
+	cb.mgr.empty_output_buffer = [](j_compress_ptr cinfo) -> boolean {
+		MemCallback* cb = (MemCallback*)cinfo->dest;
+
+		// double size
+		cb->buffer_used = cb->buffer->size();
+		cb->buffer->resize(cb->buffer->size() * 2);
+		cb->mgr.next_output_byte = cb->buffer->data() + cb->buffer_used;
+		cb->mgr.free_in_buffer = cb->buffer->size() - cb->buffer_used;
+		return TRUE;
+	};
+	cb.mgr.term_destination = [](j_compress_ptr cinfo) {
+		MemCallback* cb = (MemCallback*)cinfo->dest;
+
+		// get final size
+		cb->buffer->resize(cb->buffer->size() - cb->mgr.free_in_buffer);
+	};
+
+	return WrapJPEGCompress(image, quality, [&cb](jpeg_compress_struct& info) { info.dest = &cb.mgr; });
+}
+
+bool JPEGFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality)
+{
+	static constexpr u32 BUFFER_SIZE = 16384;
+
+	struct FileCallback
+	{
+		jpeg_destination_mgr mgr;
+
+		std::FILE* fp;
+		std::unique_ptr<u8[]> buffer;
+		bool write_error;
+	};
+
+	FileCallback cb = {
+		.mgr = {
+			.init_destination =
+				[](j_compress_ptr cinfo) {
+					FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->dest, FileCallback, mgr);
+					cb->mgr.next_output_byte = cb->buffer.get();
+					cb->mgr.free_in_buffer = BUFFER_SIZE;
+				},
+			.empty_output_buffer = [](j_compress_ptr cinfo) -> boolean {
+				FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->dest, FileCallback, mgr);
+				if (!cb->write_error)
+					cb->write_error |= (std::fwrite(cb->buffer.get(), 1, BUFFER_SIZE, cb->fp) != BUFFER_SIZE);
+
+				cb->mgr.next_output_byte = cb->buffer.get();
+				cb->mgr.free_in_buffer = BUFFER_SIZE;
+				return TRUE;
+			},
+			.term_destination =
+				[](j_compress_ptr cinfo) {
+					FileCallback* cb = BASE_FROM_RECORD_FIELD(cinfo->dest, FileCallback, mgr);
+					const size_t left = BUFFER_SIZE - cb->mgr.free_in_buffer;
+					if (left > 0 && !cb->write_error)
+						cb->write_error |= (std::fwrite(cb->buffer.get(), 1, left, cb->fp) != left);
+				},
+		},
+		.fp = fp,
+		.buffer = std::make_unique<u8[]>(BUFFER_SIZE),
+		.write_error = false,
+	};
+
+	return (WrapJPEGCompress(image, quality, [&cb](jpeg_compress_struct& info) { info.dest = &cb.mgr; }) &&
+			!cb.write_error);
+}
+
+#endif // !PCSX2_IOS_BUILD
+static bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
 {
 	int width, height;
 	if (!WebPGetInfo(static_cast<const u8*>(buffer), buffer_size, &width, &height) || width <= 0 || height <= 0)
@@ -712,7 +712,7 @@ bool WebPBufferLoader(RGBA8Image* image, const void* buffer, size_t buffer_size)
 	return true;
 }
 
-bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality)
+static bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 quality)
 {
 	u8* encoded_data;
 	const size_t encoded_size =
@@ -727,7 +727,7 @@ bool WebPBufferSaver(const RGBA8Image& image, std::vector<u8>* buffer, u8 qualit
 	return true;
 }
 
-bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
+static bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
 {
 	std::optional<std::vector<u8>> data = FileSystem::ReadBinaryFile(fp);
 	if (!data.has_value())
@@ -736,7 +736,7 @@ bool WebPFileLoader(RGBA8Image* image, const char* filename, std::FILE* fp)
 	return WebPBufferLoader(image, data->data(), data->size());
 }
 
-bool WebPFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality)
+static bool WebPFileSaver(const RGBA8Image& image, const char* filename, std::FILE* fp, u8 quality)
 {
 	std::vector<u8> buffer;
 	if (!WebPBufferSaver(image, &buffer, quality))
