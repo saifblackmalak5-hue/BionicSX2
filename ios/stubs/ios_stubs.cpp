@@ -296,22 +296,39 @@ namespace Threading {
     void SleepUntil(uint64_t ticks) {}
 }
 
-// GSCapture stubs (merged definition)
+// GSVector2i and PageProtectionMode stubs
 struct GSVector2i { int x, y; GSVector2i() : x(0), y(0) {} };
 
-struct GSCapture {
-    void Flush() {}
-    GSVector2i GetSize() { return GSVector2i(); }
+// Forward declaration for PageProtectionMode
+class PageProtectionMode {
+public:
+    bool CanRead() const { return false; }
+    bool CanWrite() const { return false; }
+    bool CanExecute() const { return false; }
+};
+
+// GSCapture namespace stubs (must match GSCapture.h)
+namespace GSCapture {
+    bool BeginCapture(float fps, GSVector2i, float aspect, std::string filename) { return false; }
+    bool DeliverVideoFrame(void* stex) { return false; }
+    void DeliverAudioPacket(const short* frames) {}
+    void EndCapture() {}
     bool IsCapturing() { return false; }
     bool IsCapturingVideo() { return false; }
-    void BeginCapture(float, GSVector2i, float, const std::string&) {}
-    void EndCapture() {}
-    float GetElapsedTime() { return 0.0f; }
+    bool IsCapturingAudio() { return false; }
+    std::string GetElapsedTime() { return ""; }
     void* GetEncoderThreadHandle() { return nullptr; }
+    GSVector2i GetSize() { return GSVector2i(); }
     std::string GetNextCaptureFileName() { return ""; }
-    void DeliverVideoFrame(void*) {}
-    void DeliverAudioPacket(short const*) {}
-};
+    void Flush() {}
+    using CodecName = std::pair<std::string, std::string>;
+    using CodecList = std::vector<CodecName>;
+    CodecList GetVideoCodecList(const char*) { return {}; }
+    CodecList GetAudioCodecList(const char*) { return {}; }
+    using FormatName = std::pair<int, std::string>;
+    using FormatList = std::vector<FormatName>;
+    FormatList GetVideoFormatList(const char*) { return {}; }
+}
 
 // VMManager::Internal::ResetVMHotkeyState stub
 namespace VMManager { namespace Internal {
@@ -332,19 +349,27 @@ extern "C" {
     const HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
 }
 
-// HostSys stubs (macOS-specific memory/system functions)
-class HostSys {
-public:
-    static void* BeginCodeWrite() { return nullptr; }
-    static void EndCodeWrite(void*) {}
-    static void* MapSharedMemory(void*, unsigned long, void*, unsigned long, int) { return nullptr; }
-    static void UnmapSharedMemory(void*, unsigned long) {}
-    static void* CreateSharedMemory(const char*, unsigned long) { return nullptr; }
-    static void DestroySharedMemory(void*) {}
-    static void* Mmap(void*, unsigned long, int) { return nullptr; }
-    static void Munmap(void*, unsigned long) {}
-    static void FlushInstructionCache(void*, unsigned int) {}
-    static unsigned long GetRuntimePageSize() { return 4096; }
-    static unsigned long GetRuntimeCacheLineSize() { return 64; }
-    static std::string GetFileMappingName(const char*) { return ""; }
+// HostSys namespace stubs (must match HostSys.h)
+namespace HostSys {
+    void* Mmap(void* base, size_t size, const PageProtectionMode& mode) { return nullptr; }
+    void Munmap(void* base, size_t size) {}
+    void MemProtect(void* baseaddr, size_t size, const PageProtectionMode& mode) {}
+    std::string GetFileMappingName(const char* prefix) { return ""; }
+    void* CreateSharedMemory(const char* name, size_t size) { return nullptr; }
+    void DestroySharedMemory(void* ptr) {}
+    void* MapSharedMemory(void* handle, size_t offset, void* baseaddr, size_t size, const PageProtectionMode& mode) { return nullptr; }
+    void UnmapSharedMemory(void* baseaddr, size_t size) {}
+    void BeginCodeWrite() {}
+    void EndCodeWrite() {}
+    void FlushInstructionCache(void* address, uint32_t size) {}
+    size_t GetRuntimePageSize() { return 4096; }
+    size_t GetRuntimeCacheLineSize() { return 64; }
+}
+
+// x86Emitter stubs (not used on ARM64, but needed for linking)
+enum XMMSSEType {
+    XMMT_INT = 0,
+    XMMT_FPS = 1,
 };
+
+thread_local XMMSSEType g_xmmtypes[16] = {XMMT_INT};
