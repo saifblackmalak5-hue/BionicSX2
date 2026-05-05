@@ -40,6 +40,8 @@ struct WindowInfo {
     static std::optional<float> QueryRefreshRateForWindow(const WindowInfo& wi) { return std::nullopt; }
 };
 
+namespace Achievements { enum LoginRequestReason {}; }
+
 // Host namespace stubs
 namespace Host {
     using s32 = int32_t;
@@ -143,7 +145,7 @@ namespace Host {
     void OnAchievementsRefreshed() {}
     void OnAchievementsLoginSuccess(const char*, unsigned int, unsigned int, unsigned int) {}
     void OnAchievementsLoginRequested(Achievements::LoginRequestReason) {}
-    namespace Achievements { enum LoginRequestReason {}; }
+
     void OnAchievementsHardcoreModeChanged(bool) {}
 
     // Additional Host functions from undefined symbols
