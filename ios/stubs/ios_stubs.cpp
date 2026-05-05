@@ -322,3 +322,35 @@ extern "C" {
     const HotkeyInfo g_gs_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
     const HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
 }
+
+// HostSys stubs (macOS-specific memory/system functions)
+class HostSys {
+public:
+    static void* BeginCodeWrite() { return nullptr; }
+    static void EndCodeWrite(void*) {}
+    static void* MapSharedMemory(void*, unsigned long, void*, unsigned long, int) { return nullptr; }
+    static void UnmapSharedMemory(void*, unsigned long) {}
+    static void* CreateSharedMemory(const char*, unsigned long) { return nullptr; }
+    static void DestroySharedMemory(void*) {}
+    static void* Mmap(void*, unsigned long, int) { return nullptr; }
+    static void Munmap(void*, unsigned long) {}
+    static void FlushInstructionCache(void*, unsigned int) {}
+    static unsigned long GetRuntimePageSize() { return 4096; }
+    static unsigned long GetRuntimeCacheLineSize() { return 64; }
+    static std::string GetFileMappingName(const char*) { return ""; }
+};
+
+// GSCapture - extended stubs for missing methods
+struct GSCapture {
+    void Flush() {}
+    GSVector2i GetSize() { return GSVector2i(); }
+    bool IsCapturing() { return false; }
+    bool IsCapturingVideo() { return false; }
+    void BeginCapture(float, GSVector2i, float, const std::string&) {}
+    void EndCapture() {}
+    float GetElapsedTime() { return 0.0f; }
+    void* GetEncoderThreadHandle() { return nullptr; }
+    std::string GetNextCaptureFileName() { return ""; }
+    void DeliverVideoFrame(void*) {}
+    void DeliverAudioPacket(short const*) {}
+};

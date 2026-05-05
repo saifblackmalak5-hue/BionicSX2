@@ -269,6 +269,12 @@ jobs:
           sed -i '' 's|}; // class JPEGSaver|}; // class JPEGSaver\n#endif // !TARGET_OS_IOS|g' $FILE
           echo "Patch 20 done - JPEG disabled for iOS"
 
+      - name: Patch 21 - Disable cam-jpeg.cpp for iOS
+        run: |
+          # Comment out cam-jpeg.cpp in CMakeLists.txt for iOS (JPEG not available)
+          sed -i '' 's|^.*USB/usb-eyetoy/cam-jpeg.cpp.*|# &|g' src/armsx2/app/src/main/cpp/pcsx2/CMakeLists.txt
+          echo "Patch 21 done - cam-jpeg.cpp disabled for iOS"
+
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
 
