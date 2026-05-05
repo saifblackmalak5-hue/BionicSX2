@@ -69,6 +69,29 @@ namespace Host {
 
     // From InputManager.h namespace Host - declaration only, defined out-of-line
     void OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier);
+    // Additional Host stubs needed for linking
+    void RequestResetSettings(bool folders, bool core, bool controllers, bool hotkeys, bool ui) {}
+    void SetDefaultUISettings(SettingsInterface& si) {}
+    void CancelGameListRefresh() {}
+    void RequestExitBigPicture() {}
+    void RequestExitApplication(bool allow_confirm) {}
+    void RequestResizeHostDisplay(s32 width, s32 height) {}
+    void OnInputDeviceConnected(std::string_view identifier, std::string_view device_name) {}
+    void OnAchievementsRefreshed() {}
+    void OnAchievementsLoginSuccess(const char* display_name, u32 points, u32 sc_points, u32 unread_messages) {}
+    void OnAchievementsLoginRequested(Achievements::LoginRequestReason reason) {}
+    void OnAchievementsHardcoreModeChanged(bool enabled) {}
+    void OnPerformanceMetricsUpdated() {}
+    void OnCoverDownloaderOpenRequested() {}
+    void OnCreateMemoryCardOpenRequested() {}
+    void PumpMessagesOnCPUThread() {}
+    void CommitBaseSettingChanges() {}
+    std::string TranslatePluralToString(const char* context, const char* msg, const char* disambiguation, int count) { return count == 1 ? msg : disambiguation; }
+    bool ShouldPreferHostFileSelector() { return false; }
+    void OpenHostFileSelectorAsync(std::string_view title, bool select_directory, std::function<void(const std::string&)> callback, std::vector<std::string> filters, std::string_view initial_directory) { callback(""); }
+    void OpenURL(std::string_view url) {}
+    std::unique_ptr<ProgressCallback> CreateHostProgressCallback() { return nullptr; }
+    s32 Internal::GetTranslatedStringImpl(std::string_view context, std::string_view msg, char* tbuf, size_t tbuf_space) { if (msg.size() <= tbuf_space) { std::memcpy(tbuf, msg.data(), msg.size()); } return msg.size(); }
 } // namespace Host
 // Host::CheckForSettingsChanges out-of-line definition
 void Host::CheckForSettingsChanges(const Pcsx2Config& old_config) {}
