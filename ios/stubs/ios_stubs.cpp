@@ -107,7 +107,7 @@ namespace Host {
 
     // From VMManager.h namespace Host
     void LoadSettings(SettingsInterface&, std::unique_lock<std::mutex>&) {}
-    void CheckForSettingsChanges(const Pcsx2::Config&) {}
+    void CheckForSettingsChanges(const Pcsx2Config&) {}
     void OnVMStarting() {}
     void OnVMStarted() {}
     void OnVMDestroyed() {}
@@ -138,7 +138,7 @@ namespace Host {
     std::optional<WindowInfo> GetTopLevelWindowInfo() { return std::nullopt; }
     void OnInputDeviceConnected(const std::string_view, const std::string_view) {}
     struct InputBindingKey {};
-    void OnInputDeviceDisconnected(InputBindingKey, const std::string_view) {}
+    void OnInputDeviceDisconnected(InputBindingKey, std::string_view) {}
     void SetMouseMode(bool, bool) {}
 
     // From Achievements.h namespace Host
@@ -262,6 +262,12 @@ public:
     void Unmap(void*, unsigned long) {}
     void Destroy() {}
 };
+// SharedMemoryMappingArea out-of-line definitions
+void* SharedMemoryMappingArea::Create(unsigned long) { return nullptr; }
+void* SharedMemoryMappingArea::Map(void* baseaddr, unsigned long baseaddr_size, void* mapaddr, unsigned long mapaddr_size, const PageProtectionMode& mode) { return nullptr; }
+void SharedMemoryMappingArea::Unmap(void*, unsigned long) {}
+void SharedMemoryMappingArea::Destroy() {}
+
 
 // Out-of-line definitions to ensure symbols are emitted
 SharedMemoryMappingArea::SharedMemoryMappingArea() = default;
