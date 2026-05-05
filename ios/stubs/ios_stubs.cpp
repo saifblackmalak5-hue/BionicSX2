@@ -12,16 +12,13 @@
 #include <mutex>
 #include <memory>
 
-// Forward declarations for PCSX2 types
-namespace Pcsx2 {
-    struct Config;
-}
-using Pcsx2Config = Pcsx2::Config;
+// Include PCSX2 headers for proper type definitions
+#include "pcsx2/Host.h"
+#include "pcsx2/Input/InputBindingKey.h"
+#include "pcsx2/Achievements.h"
 
-struct SettingsInterface;
-struct ProgressCallback;
-struct Error;
-struct AudioStreamParameters;
+// Provide stub implementations for Host namespace functions
+// These need to match the declarations in Host.h exactly
 
 // WindowInfo forward declaration
 struct WindowInfo {
