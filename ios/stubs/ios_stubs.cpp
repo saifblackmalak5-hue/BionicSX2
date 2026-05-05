@@ -12,13 +12,115 @@
 #include <mutex>
 #include <memory>
 
-// Include PCSX2 headers for proper type definitions
-#include "pcsx2/Host.h"
-#include "pcsx2/Input/InputBindingKey.h"
-#include "pcsx2/Achievements.h"
+// Forward declarations for PCSX2 types (avoid including headers with complex dependencies)
+namespace Pcsx2 {
+    struct Config;
+}
+using Pcsx2Config = Pcsx2::Config;
 
-// Provide stub implementations for Host namespace functions
-// These need to match the declarations in Host.h exactly
+struct SettingsInterface;
+struct ProgressCallback;
+struct Error;
+struct AudioStreamParameters;
+
+// Forward declarations for Host namespace types
+namespace Host {
+    // Constants
+    static constexpr float OSD_CRITICAL_ERROR_DURATION = 20.0f;
+    static constexpr float OSD_ERROR_DURATION = 15.0f;
+    static constexpr float OSD_WARNING_DURATION = 10.0f;
+    static constexpr float OSD_INFO_DURATION = 5.0f;
+    static constexpr float OSD_QUICK_DURATION = 2.5f;
+
+    // Translation functions
+    const char* TranslateToCString(const std::string_view context, const std::string_view msg);
+    std::string_view TranslateToStringView(const std::string_view context, const std::string_view msg);
+    std::string TranslateToString(const std::string_view context, const std::string_view msg);
+    std::string TranslatePluralToString(const char* context, const char* msg, const char* disambiguation, int count);
+    void ClearTranslationCache();
+
+    // OSD messages
+    void AddOSDMessage(std::string message, float duration = 2.0f);
+    void AddKeyedOSDMessage(std::string key, std::string message, float duration = 2.0f);
+    void AddIconOSDMessage(std::string key, const char* icon, const std::string_view message, float duration = 2.0f);
+    void RemoveKeyedOSDMessage(std::string key);
+    void ClearOSDMessages();
+
+    // Error/confirmation
+    void ReportInfoAsync(const std::string_view title, const std::string_view message);
+    void ReportFormattedInfoAsync(const std::string_view title, const char* format, ...);
+    void ReportErrorAsync(const std::string_view title, const std::string_view message);
+    void ReportFormattedErrorAsync(const std::string_view title, const char* format, ...);
+    bool ConfirmMessage(const std::string_view title, const std::string_view message);
+    bool ConfirmFormattedMessage(const std::string_view title, const char* format, ...);
+
+    // Mode queries
+    bool InBatchMode();
+    bool InNoGUIMode();
+
+    // System functions
+    void OpenURL(const std::string_view url);
+    bool CopyTextToClipboard(const std::string_view text);
+    bool EnsureResourceSubdirectory(const char* relative_path);
+    bool RequestResetSettings(bool folders, bool core, bool controllers, bool hotkeys, bool ui);
+    void RequestResizeHostDisplay(int32_t width, int32_t height);
+    void RunOnCPUThread(std::function<void()> function, bool block = false);
+    void RefreshGameListAsync(bool invalidate_cache);
+    void CancelGameListRefresh();
+    void RequestVMShutdown(bool allow_confirm, bool allow_save_state, bool default_save_state);
+    std::string GetHTTPUserAgent();
+
+    // Settings access (base)
+    std::string GetBaseStringSettingValue(const char* section, const char* key, const char* default_value = "");
+    std::string GetBaseSmallStringSettingValue(const char* section, const char* key, const char* default_value = "");
+    std::string GetBaseTinyStringSettingValue(const char* section, const char* key, const char* default_value = "");
+    bool GetBaseBoolSettingValue(const char* section, const char* key, bool default_value = false);
+    int GetBaseIntSettingValue(const char* section, const char* key, int default_value = 0);
+    uint32_t GetBaseUIntSettingValue(const char* section, const char* key, uint32_t default_value = 0);
+    float GetBaseFloatSettingValue(const char* section, const char* key, float default_value = 0.0f);
+    double GetBaseDoubleSettingValue(const char* section, const char* key, double default_value = 0.0);
+    std::vector<std::string> GetBaseStringListSetting(const char* section, const char* key);
+    void SetBaseBoolSettingValue(const char* section, const char* key, bool value);
+    void SetBaseIntSettingValue(const char* section, const char* key, int value);
+    void SetBaseUIntSettingValue(const char* section, const char* key, uint32_t value);
+    void SetBaseFloatSettingValue(const char* section, const char* key, float value);
+    void SetBaseStringSettingValue(const char* section, const char* key, const char* value);
+    void SetBaseStringListSettingValue(const char* section, const char* key, const std::vector<std::string>& values);
+    bool AddBaseValueToStringList(const char* section, const char* key, const char* value);
+    bool RemoveBaseValueFromStringList(const char* section, const char* key, const char* value);
+    bool ContainsBaseSettingValue(const char* section, const char* key);
+    void RemoveBaseSettingValue(const char* section, const char* key);
+    void CommitBaseSettingChanges();
+
+    // Settings access (game-specific)
+    std::string GetStringSettingValue(const char* section, const char* key, const char* default_value = "");
+    std::string GetSmallStringSettingValue(const char* section, const char* key, const char* default_value = "");
+    std::string GetTinyStringSettingValue(const char* section, const char* key, const char* default_value = "");
+    bool GetBoolSettingValue(const char* section, const char* key, bool default_value = false);
+    int GetIntSettingValue(const char* section, const char* key, int default_value = 0);
+    uint32_t GetUIntSettingValue(const char* section, const char* key, uint32_t default_value = 0);
+    float GetFloatSettingValue(const char* section, const char* key, float default_value = 0.0f);
+    double GetDoubleSettingValue(const char* section, const char* key, double default_value = 0.0);
+    std::vector<std::string> GetStringListSetting(const char* section, const char* key);
+
+    // Settings interface
+    std::unique_lock<std::mutex> GetSettingsLock();
+    SettingsInterface* GetSettingsInterface();
+    void SetDefaultUISettings(SettingsInterface& si);
+    std::unique_ptr<ProgressCallback> CreateHostProgressCallback();
+
+    // Internal functions
+    namespace Internal {
+        void EnsureAndroidResourceSubdirCopied(const char* relative_path);
+        SettingsInterface* GetBaseSettingsLayer();
+        SettingsInterface* GetGameSettingsLayer();
+        SettingsInterface* GetInputSettingsLayer();
+        void SetBaseSettingsLayer(SettingsInterface* sif);
+        void SetGameSettingsLayer(SettingsInterface* sif, std::unique_lock<std::mutex>& settings_lock);
+        void SetInputSettingsLayer(SettingsInterface* sif, std::unique_lock<std::mutex>& settings_lock);
+        s32 GetTranslatedStringImpl(const std::string_view context, const std::string_view msg, char* tbuf, size_t tbuf_space);
+    }
+}
 
 // WindowInfo forward declaration
 struct WindowInfo {
