@@ -164,7 +164,7 @@ jobs:
             -DUSE_DISCORD_SDK=ON \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source -D__aarch64__=1" \
+            -DCMAKE_CXX_FLAGS="-I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/plutovg/include -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/plutosvg1/source -D__aarch64__=1 -DPCSX2_IOS_BUILD=1" \
             -DCMAKE_PREFIX_PATH="/tmp/ios-libs" \
             -DCMAKE_FIND_ROOT_PATH="/tmp/ios-libs" \
             -DM_ARM64=TRUE \
