@@ -309,17 +309,17 @@ namespace VMManager { namespace Internal {
     void ResetVMHotkeyState() {}
 }}
 
-// HotkeyInfo forward declaration
+// HotkeyInfo - must match InputManager.h definition
 struct HotkeyInfo {
     const char* name;
     const char* category;
     const char* display_name;
-    int key_code;
-    HotkeyInfo() : name(nullptr), category(nullptr), display_name(nullptr), key_code(0) {}
+    void (*handler)(s32 pressed);
+    HotkeyInfo() : name(nullptr), category(nullptr), display_name(nullptr), handler(nullptr) {}
 };
 
 extern "C" {
-    const HotkeyInfo g_common_hotkeys[] = {{nullptr, nullptr, nullptr, 0}};
-    const HotkeyInfo g_gs_hotkeys[] = {{nullptr, nullptr, nullptr, 0}};
-    const HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, 0}};
+    const HotkeyInfo g_common_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
+    const HotkeyInfo g_gs_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
+    const HotkeyInfo g_host_hotkeys[] = {{nullptr, nullptr, nullptr, nullptr}};
 }
