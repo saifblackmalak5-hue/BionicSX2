@@ -280,6 +280,10 @@ extern "C" {
     void jpeg_set_colorspace(jpeg_compress_struct*, int) {}
     void jpeg_default_colorspace(jpeg_compress_struct*) {}
     void jpeg_set_linear_quality(jpeg_compress_struct*, int, int) {}
+    // Define JPEG boolean type (normally from jmorecfg.h)
+    typedef int boolean;
+    #define FALSE 0
+    #define TRUE 1
     boolean jpeg_has_multiple_scans(jpeg_decompress_struct*) { return FALSE; }
     boolean jpeg_start_output(jpeg_decompress_struct*, int) { return FALSE; }
     boolean jpeg_finish_output(jpeg_decompress_struct*) { return FALSE; }
