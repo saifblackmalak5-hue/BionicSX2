@@ -47,15 +47,6 @@ struct WindowInfo {
 
 namespace Achievements { enum LoginRequestReason {}; }
 
-// Host namespace - ONLY stub what's not already defined in Host.cpp
-namespace Host {
-    // From VMManager.h namespace Host - declaration only, defined out-of-line
-    void CheckForSettingsChanges(const Pcsx2Config& old_config);
-
-    // From InputManager.h namespace Host - declaration only, defined out-of-line
-    void OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier);
-} // namespace Host
-
 // InputBindingKey must match the global namespace union in InputManager.h
 union InputBindingKey {
     u64 bits;
@@ -70,6 +61,15 @@ union InputBindingKey {
         u32 data;
     };
 };
+
+// Host namespace - ONLY stub what's not already defined in Host.cpp
+namespace Host {
+    // From VMManager.h namespace Host - declaration only, defined out-of-line
+    void CheckForSettingsChanges(const Pcsx2Config& old_config);
+
+    // From InputManager.h namespace Host - declaration only, defined out-of-line
+    void OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier);
+}
 
 // Host::CheckForSettingsChanges out-of-line definition
 void Host::CheckForSettingsChanges(const Pcsx2Config& old_config) {}
