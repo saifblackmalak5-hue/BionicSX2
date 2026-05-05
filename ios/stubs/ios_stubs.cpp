@@ -91,10 +91,18 @@ namespace Host {
     void OpenHostFileSelectorAsync(std::string_view title, bool select_directory, std::function<void(const std::string&)> callback, std::vector<std::string> filters, std::string_view initial_directory) { callback(""); }
     void OpenURL(std::string_view url) {}
     std::unique_ptr<ProgressCallback> CreateHostProgressCallback() { return nullptr; }
-    s32 Internal::GetTranslatedStringImpl(std::string_view context, std::string_view msg, char* tbuf, size_t tbuf_space) { if (msg.size() <= tbuf_space) { std::memcpy(tbuf, msg.data(), msg.size()); } return msg.size(); }
+    namespace Internal {
+        size_t GetTranslatedStringImpl(std::string_view context, std::string_view msg, char* out_buf, size_t out_buf_size);
+    }
 } // namespace Host
 // Host::CheckForSettingsChanges out-of-line definition
 void Host::CheckForSettingsChanges(const Pcsx2Config& old_config) {}
+
+// Host::Internal::GetTranslatedStringImpl out-of-line definition
+size_t Host::Internal::GetTranslatedStringImpl(std::string_view context, std::string_view msg, char* out_buf, size_t out_buf_size) {
+    if (msg.size() <= out_buf_size) { std::memcpy(out_buf, msg.data(), msg.size()); }
+    return msg.size();
+}
 
 
 // CPU tick count for timing
