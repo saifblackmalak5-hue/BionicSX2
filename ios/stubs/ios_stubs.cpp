@@ -91,6 +91,24 @@ namespace Host {
     void OpenHostFileSelectorAsync(std::string_view title, bool select_directory, std::function<void(const std::string&)> callback, std::vector<std::string> filters, std::string_view initial_directory) { callback(""); }
     void OpenURL(std::string_view url) {}
     std::unique_ptr<ProgressCallback> CreateHostProgressCallback() { return nullptr; }
+    // Additional Host stubs needed for linking
+    void OnVMDestroyed() {}
+    void SetFullscreen(bool fullscreen) {}
+    void BeginTextInput() {}
+    void BeginPresentFrame() {}
+    void* AcquireRenderWindow(bool recreate) { return nullptr; }
+    void ReleaseRenderWindow() {}
+    void RunOnCPUThread(std::function<void()> func, bool block) { func(); }
+    bool ConfirmMessage(std::string_view title, std::string_view message) { return false; }
+    void ReportErrorAsync(std::string_view title, std::string_view message) {}
+    void ReportInfoAsync(std::string_view title, std::string_view message) {}
+    void RequestVMShutdown(bool allow_confirm, bool allow_save_state, bool default_save_state) {}
+    void RefreshGameListAsync(bool invalidate_cache) {}
+    void OnSaveStateLoading(std::string_view filename) {}
+    void OnSaveStateLoaded(std::string_view filename, bool was_successful) {}
+    void OnSaveStateSaved(std::string_view filename) {}
+    bool CopyTextToClipboard(std::string_view text) { return false; }
+    bool LocaleCircleConfirm() { return false; }
     namespace Internal {
         size_t GetTranslatedStringImpl(std::string_view context, std::string_view msg, char* out_buf, size_t out_buf_size);
     }
