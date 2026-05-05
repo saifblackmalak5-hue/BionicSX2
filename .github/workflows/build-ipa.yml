@@ -314,6 +314,7 @@ jobs:
             -std=c++17 \
             -I$(pwd)/src/armsx2/app/src/main/cpp \
             -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty \
+            -I$(pwd)/src/armsx2/app/src/main/cpp/3rdparty/fmt/include \
             -c ios/stubs/ios_stubs.cpp \
             -o output/Payload/BionicSX2.app/ios_stubs.o
 
