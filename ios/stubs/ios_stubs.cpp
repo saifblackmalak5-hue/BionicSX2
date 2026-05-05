@@ -384,9 +384,6 @@ public:
 // Out-of-line definition
 std::unique_ptr<HTTPDownloader> HTTPDownloader::Create(std::string) { return nullptr; }
 
-// DEFAULT_USER_AGENT constant
-static const char DEFAULT_USER_AGENT[] = "BionicSX2/1.0";
-
 
 // GSVector2i, GSVector2T, and PageProtectionMode stubs
 template<typename T>
