@@ -8,6 +8,7 @@
 #include <mutex>
 #include <functional>
 #include <cstring>
+#include <cstdint>
 
 // Forward declarations
 struct SettingsInterface;
@@ -22,6 +23,9 @@ namespace Achievements { enum class LoginRequestReason; }
 template<typename T> struct GSVector2T { T x, y; };
 
 static const char DEFAULT_USER_AGENT[] = "BionicSX2/1.0";
+
+// PageProtectionMode forward declaration
+struct PageProtectionMode {};
 
 // =====================
 // SharedMemoryMappingArea
@@ -172,3 +176,57 @@ namespace Host {
 namespace HTTPDownloader {
     std::unique_ptr<void> Create(std::string user_agent = DEFAULT_USER_AGENT) { return nullptr; }
 }
+
+// =====================
+// HostSys stubs
+// =====================
+namespace HostSys {
+    void MemProtect(void* baseaddr, size_t size, const PageProtectionMode& mode) {}
+    void BeginCodeWrite() {}
+    void EndCodeWrite() {}
+    void FlushInstructionCache(void* ptr, uint32_t size) {}
+    void* MapSharedMemory(void* file_handle, size_t file_offset, void* map_base, size_t map_size, const PageProtectionMode& mode) { return nullptr; }
+    void UnmapSharedMemory(void* base_ptr, size_t size) {}
+    void* CreateSharedMemory(const char* name, size_t size) { return nullptr; }
+    void DestroySharedMemory(void* ptr) {}
+    std::string GetFileMappingName(const char* prefix) { return ""; }
+    uint32_t GetRuntimePageSize() { return 16384; }
+    uint32_t GetRuntimeCacheLineSize() { return 64; }
+    void* Mmap(void* base, size_t size, const PageProtectionMode& mode) { return nullptr; }
+    void Munmap(void* base, size_t size) {}
+}
+
+// =====================
+// Common stubs
+// =====================
+namespace Common {
+    void PlaySoundAsync(const char* path) {}
+    void InhibitScreensaver(bool inhibit) {}
+}
+
+// =====================
+// Threading stubs
+// =====================
+namespace Threading {
+    void Sleep(int ms) {}
+    void SleepUntil(uint64_t ticks) {}
+}
+
+// =====================
+// Global hotkey arrays (empty)
+// =====================
+struct HotkeyInfo {};
+const HotkeyInfo g_common_hotkeys[] = {};
+const HotkeyInfo g_host_hotkeys[] = {};
+
+// =====================
+// VMManager::Internal
+// =====================
+namespace VMManager { namespace Internal {
+    void ResetVMHotkeyState() {}
+}}
+
+// =====================
+// Thread-local xmm types (needed by iCore)
+// =====================
+__thread int g_xmmtypes[32] = {};
