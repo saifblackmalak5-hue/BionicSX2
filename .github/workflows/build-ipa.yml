@@ -279,15 +279,17 @@ jobs:
 
       - name: Build
         run: cmake --build build --config Release -j$(sysctl -n hw.logicalcpu)
-      - name: Analyze libPCSX2.a symbols
+      - name: Analyze libPCSX2.a symbols (with c++filt)
         run: |
-          echo '=== SYMBOLS ALREADY IN libPCSX2.a ==='
-          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' T ' | grep -E '(Host::|VMManager::|InputManager::|GSCapture|SharedMemory)' | sort -u || echo "No matching T symbols found"
-          echo '=== UNDEFINED SYMBOLS NEEDED ==='
-          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' U ' | sort -u || echo "No U symbols found"
-          echo '=== ALL UNDEFINED SYMBOLS ==='
-          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' U ' | sort -u > /tmp/undefined_symbols.txt || true
-          cat /tmp/undefined_symbols.txt || echo "Could not read undefined symbols"
+          echo '=== UNDEFINED Host:: SYMBOLS ==='
+          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' U ' | c++filt | grep -E '(Host::|VMManager::|InputManager::|GSCapture|SharedMemory)' | sort -u || echo "No undefined Host:: symbols found"
+
+          echo '=== DEFINED Host:: SYMBOLS (already in library) ==='
+          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' T ' | c++filt | grep -E '(Host::|VMManager::|InputManager::|GSCapture|SharedMemory)' | sort -u || echo "No defined Host:: symbols found"
+
+          echo '=== ALL UNDEFINED SYMBOLS (demangled) ==='
+          nm build/pcsx2/libPCSX2.a 2>/dev/null | grep ' U ' | c++filt | sort -u > /tmp/undefined_symbols_demangled.txt || true
+          cat /tmp/undefined_symbols_demangled.txt || echo "Could not read undefined symbols"
 
 
       - name: Package IPA
