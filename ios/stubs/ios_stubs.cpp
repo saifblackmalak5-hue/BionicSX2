@@ -114,7 +114,7 @@ namespace Host {
 
     // Input
     void OnInputDeviceConnected(std::string_view identifier, std::string_view device_name) {}
-    void OnInputDeviceDisconnected(InputBindingKey key, std::string_view identifier) {}
+    void OnInputDeviceDisconnected(uint64_t key, std::string_view identifier) {}
 
     // UI
     bool InNoGUIMode() { return true; }
